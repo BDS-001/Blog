@@ -23,6 +23,18 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  blogPosts Blog[]
 
   @@index([email])
+}
+
+model Blog {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             Int
+  title     String   
+  content   String   @db.Text
+
 }
