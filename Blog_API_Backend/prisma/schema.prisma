@@ -65,5 +65,6 @@ model Role {
   canComment    Boolean    @default(true)
   canCreateBlog Boolean    @default(false)
   canModerate   Boolean    @default(false)
+  isAdmin       Boolean    @default(false)
   users         User[]
 }
