@@ -5,14 +5,14 @@ const app = express();
 
 
 // --- Route Imports ---
-
+const apiRouter = require('./routes/apiRouterV1')
 
 // --- Middleware Setup ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // --- Routes ---
-
+app.use('/api/v1', apiRouter);
 
 // --- Server Configuration and Startup ---
 const PORT = parseInt(process.env.USE_PORT, 10) || 3000;
