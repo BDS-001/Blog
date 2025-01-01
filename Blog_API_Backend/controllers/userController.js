@@ -1,5 +1,16 @@
 const userQueries = require('../prisma/queries/userQueries')
 
+function sanitizeData(data, allowedFields) {
+    return Object.entries(data).reduce((sanatizedObject, [key, val]) => {
+        let value = val
+        if (typeof val === 'string' && key != 'password') value = value.trim()
+        if (allowedFields.includes(key)) {
+            sanatizedObject[key] = value
+        }
+        return sanatizedObject
+    }, {})
+}
+
 // Get all users
 async function getUsers(req, res) {
     try {
@@ -25,15 +36,8 @@ const getUserById = async (req, res) => {
  const createUser = async (req, res) => {
     try {
         const allowedFields = ['email', 'name', 'username', 'password', 'roleId'];
-        const sanatizedData = Object.entries(req.body).reduce((sanatizedObject, [key, val]) => {
-            let value = val
-            if (typeof val === 'string' && key != 'password') value = value.trim()
-            if (allowedFields.includes(key)) {
-                sanatizedObject[key] = value
-            }
-            return sanatizedObject
-        }, {})
-        const user = userQueries.postUsers(sanatizedData)
+        const userData = sanitizeData(req.body, allowedFields)
+        const user = userQueries.postUsers(userData)
         res.status(200).json(user)
     } catch (error) {
         res.status(500).json({ message: "Error creating user", error: error.message });
@@ -44,8 +48,10 @@ const getUserById = async (req, res) => {
  const updateUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const updateData = req.body;
- 
+        const allowedFields = ['name', 'username', 'password', 'roleId'];
+        const updateData = sanitizeData(req.body, allowedFields);
+        const user = userQueries.putUser(updateData)
+        res.status(200).json(user)
     } catch (error) {
         res.status(500).json({ message: "Error updating user", error: error.message });
     }
