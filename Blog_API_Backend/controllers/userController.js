@@ -24,8 +24,17 @@ const getUserById = async (req, res) => {
  // Create new user 
  const createUser = async (req, res) => {
     try {
-        const userData = req.body;
- 
+        const allowedFields = ['email', 'name', 'username', 'password', 'roleId'];
+        const sanatizedData = Object.entries(req.body).reduce((sanatizedObject, [key, val]) => {
+            let value = val
+            if (typeof val === 'string' && key != 'password') value = value.trim()
+            if (allowedFields.includes(key)) {
+                sanatizedObject[key] = value
+            }
+            return sanatizedObject
+        }, {})
+        const user = userQueries.postUsers(sanatizedData)
+        res.status(200).json(user)
     } catch (error) {
         res.status(500).json({ message: "Error creating user", error: error.message });
     }
