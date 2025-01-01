@@ -1,8 +1,9 @@
 const prisma = require('../prismaClient')
 
-async function getUsers() {
+async function getUsers(options = {}) {
     try {
         const users = await prisma.user.findMany({
+            where: options,
             select: {
                 id: true,
                 email: true,

@@ -14,7 +14,8 @@ async function getUsers(req, res) {
 const getUserById = async (req, res) => {
     try {
         const { userId } = req.params;
- 
+        const user = userQueries.getUserById(userId)
+        res.status(200).json(user)
     } catch (error) {
         res.status(500).json({ message: "Error fetching user", error: error.message });
     }
