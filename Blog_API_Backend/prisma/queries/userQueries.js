@@ -22,7 +22,7 @@ async function getUsers(options = {}) {
 
 async function getUserById(userId) {
     try {
-        const user = await prisma.user.findMany({
+        const user = await prisma.user.findUniqe({
             where: {
                 id: userId,
             },
