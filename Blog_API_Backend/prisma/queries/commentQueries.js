@@ -105,9 +105,73 @@ async function deleteComment(commentId) {
   }
 }
 
+async function postComment(commentData) {
+    try {
+        const comment = await prisma.comment.create({
+            data: commentData,
+            include: {
+                user: {
+                  select: { id: true, name: true, username: true }
+                },
+                blog: {
+                  select: { id: true, title: true }
+                },
+                parent: {
+                  select: {
+                    id: true,
+                    content: true,
+                    user: {
+                      select: { id: true, name: true, username: true }
+                    }
+                  }
+                }
+              }
+        })
+        return comment
+    } catch (error) {
+        throw new Error(`Failed to create comment: ${error.message}`);
+    }
+}
+
+async function putComment(commentId, newData) {
+    try {
+        const comment = await prisma.comment.update({
+            where: {
+                id: commentId
+            },
+            data: {
+                ...newData,
+                updatedAt: new Date()
+              },
+              include: {
+                user: {
+                  select: { id: true, name: true, username: true }
+                },
+                blog: {
+                  select: { id: true, title: true }
+                },
+                parent: {
+                  select: {
+                    id: true,
+                    content: true,
+                    user: {
+                      select: { id: true, name: true, username: true }
+                    }
+                  }
+                }
+              }
+        })
+        return comment
+    } catch (error) {
+        throw new Error(`Failed to update comment: ${error.message}`);
+    }
+}
+
 module.exports = {
   getCommentById,
   getComments,
   getCommentsByBlogId,
-  deleteComment
+  deleteComment,
+  postComment,
+  putComment
 }
