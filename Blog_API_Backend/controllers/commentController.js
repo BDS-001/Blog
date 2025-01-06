@@ -1,77 +1,144 @@
 const commentQueries = require('../prisma/queries/commentQueries');
 
-const allowedFields = {
-  create: ['content', 'userId', 'blogId', 'parentId'],
-  update: ['content']
+// Constants
+const ALLOWED_FIELDS = {
+    create: ['content', 'userId', 'blogId', 'parentId'],
+    update: ['content']
 };
 
+const HTTP_STATUS = {
+    OK: 200,
+    CREATED: 201,
+    BAD_REQUEST: 400,
+    NOT_FOUND: 404,
+    INTERNAL_ERROR: 500
+};
+
+// Helper Functions
 function sanitizeData(data, fields) {
-  return Object.entries(data).reduce((sanitized, [key, val]) => {
-    let value = val;
-    if (typeof val === 'string') {
-      value = value.trim();
-    }
-    if (fields.includes(key)) {
-      sanitized[key] = value;
-    }
-    return sanitized;
-  }, {});
+    return Object.entries(data).reduce((sanitized, [key, val]) => {
+        if (fields.includes(key)) {
+            sanitized[key] = typeof val === 'string' ? val.trim() : val;
+        }
+        return sanitized;
+    }, {});
 }
 
-async function handleCommentOperation(operation) {
-  return async (req, res) => {
+function handleError(res, operation, error) {
+    console.error(`Error ${operation}:`, error);
+    return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        message: `Error ${operation}`,
+        error: error.message
+    });
+}
+
+// Handler Functions
+async function getAllComments(req, res) {
     try {
-      let result;
-      const commentId = req.params.commentId;
-      const blogId = req.params.blogId;
-
-      switch (operation) {
-        case 'getAll':
-          result = await commentQueries.getComments();
-          break;
-        case 'getAllBlog':
-            result = await commentQueries.getCommentsByBlogId(blogId);
-            break;
-        case 'getOne':
-          result = await commentQueries.getCommentById(commentId);
-          break;
-        case 'create':
-          const createData = sanitizeData(req.body, allowedFields.create);
-          result = await commentQueries.postComment(createData);
-          break;
-        case 'update':
-          const updateData = sanitizeData(req.body, allowedFields.update);
-          result = await commentQueries.putComment(commentId, updateData);
-          break;
-        case 'delete':
-          result = await commentQueries.deleteComment(commentId);
-          break;
-      }
-
-      res.status(200).json(result);
+        const comments = await commentQueries.getComments();
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Comments retrieved successfully',
+            data: comments
+        });
     } catch (error) {
-      const messages = {
-        getAll: 'fetching comments',
-        getAllBlog: 'fetching blog comments',
-        getOne: 'fetching comment',
-        create: 'creating comment',
-        update: 'updating comment',
-        delete: 'deleting comment'
-      };
-      
-      res.status(500).json({ 
-        message: `Error ${messages[operation]}`, 
-        error: error.message 
-      });
+        return handleError(res, 'fetching comments', error);
     }
-  };
+}
+
+async function getBlogComments(req, res) {
+    try {
+        const { blogId } = req.params;
+        const comments = await commentQueries.getCommentsByBlogId(blogId);
+        
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Blog comments retrieved successfully',
+            data: comments
+        });
+    } catch (error) {
+        return handleError(res, 'fetching blog comments', error);
+    }
+}
+
+async function getCommentById(req, res) {
+    try {
+        const { commentId } = req.params;
+        const comment = await commentQueries.getCommentById(commentId);
+        
+        if (!comment) {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: `Comment with ID ${commentId} not found`
+            });
+        }
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Comment retrieved successfully',
+            data: comment
+        });
+    } catch (error) {
+        return handleError(res, 'fetching comment', error);
+    }
+}
+
+async function createComment(req, res) {
+    try {
+        const createData = sanitizeData(req.body, ALLOWED_FIELDS.create);
+        const comment = await commentQueries.postComment(createData);
+        
+        return res.status(HTTP_STATUS.CREATED).json({
+            message: 'Comment created successfully',
+            data: comment
+        });
+    } catch (error) {
+        return handleError(res, 'creating comment', error);
+    }
+}
+
+async function updateComment(req, res) {
+    try {
+        const { commentId } = req.params;
+        const updateData = sanitizeData(req.body, ALLOWED_FIELDS.update);
+        const updatedComment = await commentQueries.putComment(commentId, updateData);
+        
+        if (!updatedComment) {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: `Comment with ID ${commentId} not found`
+            });
+        }
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Comment updated successfully',
+            data: updatedComment
+        });
+    } catch (error) {
+        return handleError(res, 'updating comment', error);
+    }
+}
+
+async function deleteComment(req, res) {
+    try {
+        const { commentId } = req.params;
+        const deletedComment = await commentQueries.deleteComment(commentId);
+        
+        if (!deletedComment) {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: `Comment with ID ${commentId} not found`
+            });
+        }
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Comment deleted successfully',
+            data: { id: commentId }
+        });
+    } catch (error) {
+        return handleError(res, 'deleting comment', error);
+    }
 }
 
 module.exports = {
-    getComments: handleCommentOperation('getAll'),
-    getBlogComments: handleCommentOperation('getAllBlog'),
-    getCommentById: handleCommentOperation('getOne'),
-    createComment: handleCommentOperation('create'),
-    updateComment: handleCommentOperation('update'),
-    deleteComment: handleCommentOperation('delete'),
+    getAllComments,
+    getBlogComments,
+    getCommentById,
+    createComment,
+    updateComment,
+    deleteComment
 };

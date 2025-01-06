@@ -1,71 +1,138 @@
 const userQueries = require('../prisma/queries/userQueries');
 
-const allowedFields = {
-  create: ['email', 'name', 'username', 'password', 'roleId'],
-  update: ['name', 'username', 'password', 'roleId']
+// Constants
+const ALLOWED_FIELDS = {
+    create: ['email', 'name', 'username', 'password', 'roleId'],
+    update: ['name', 'username', 'password', 'roleId']
 };
 
+const HTTP_STATUS = {
+    OK: 200,
+    CREATED: 201,
+    BAD_REQUEST: 400,
+    NOT_FOUND: 404,
+    INTERNAL_ERROR: 500
+};
+
+// Helper Functions
 function sanitizeData(data, fields) {
-  return Object.entries(data).reduce((sanitized, [key, val]) => {
-    let value = val;
-    if (typeof val === 'string' && key !== 'password') {
-      value = value.trim();
-    }
-    if (fields.includes(key)) {
-      sanitized[key] = value;
-    }
-    return sanitized;
-  }, {});
+    return Object.entries(data).reduce((sanitized, [key, val]) => {
+        if (fields.includes(key)) {
+            // Don't trim password field
+            sanitized[key] = typeof val === 'string' && key !== 'password' 
+                ? val.trim() 
+                : val;
+        }
+        return sanitized;
+    }, {});
 }
 
-async function handleUserOperation(operation) {
-  return async (req, res) => {
+function handleError(res, operation, error) {
+    console.error(`Error ${operation}:`, error);
+    return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        message: `Error ${operation}`,
+        error: error.message
+    });
+}
+
+// Handler Functions
+async function getUsers(req, res) {
     try {
-      let result;
-      const userId = req.params.userId;
-
-      switch (operation) {
-        case 'getAll':
-          result = await userQueries.getUsers();
-          break;
-        case 'getOne':
-          result = await userQueries.getUserById(userId);
-          break;
-        case 'create':
-          const createData = sanitizeData(req.body, allowedFields.create);
-          result = await userQueries.postUsers(createData);
-          break;
-        case 'update':
-          const updateData = sanitizeData(req.body, allowedFields.update);
-          result = await userQueries.putUser(userId, updateData);
-          break;
-        case 'delete':
-          result = await userQueries.deleteUser(userId);
-          break;
-      }
-
-      res.status(200).json(result);
+        const users = await userQueries.getUsers();
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Users retrieved successfully',
+            data: users
+        });
     } catch (error) {
-      const messages = {
-        getAll: 'fetching users',
-        getOne: 'fetching user',
-        create: 'creating user',
-        update: 'updating user',
-        delete: 'deleting user'
-      };
-      
-      res.status(500).json({ 
-        message: `Error ${messages[operation]}`, 
-        error: error.message 
-      });
+        return handleError(res, 'fetching users', error);
     }
-  };
+}
+
+async function getUserById(req, res) {
+    try {
+        const { userId } = req.params;
+        const user = await userQueries.getUserById(userId);
+        
+        if (!user) {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: `User with ID ${userId} not found`
+            });
+        }
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'User retrieved successfully',
+            data: user
+        });
+    } catch (error) {
+        return handleError(res, 'fetching user', error);
+    }
+}
+
+async function createUser(req, res) {
+    try {
+        const createData = sanitizeData(req.body, ALLOWED_FIELDS.create);
+        const user = await userQueries.postUsers(createData);
+        
+        // Remove password from response
+        const { password, ...userWithoutPassword } = user;
+        
+        return res.status(HTTP_STATUS.CREATED).json({
+            message: 'User created successfully',
+            data: userWithoutPassword
+        });
+    } catch (error) {
+        return handleError(res, 'creating user', error);
+    }
+}
+
+async function updateUser(req, res) {
+    try {
+        const { userId } = req.params;
+        const updateData = sanitizeData(req.body, ALLOWED_FIELDS.update);
+        const updatedUser = await userQueries.putUser(userId, updateData);
+        
+        if (!updatedUser) {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: `User with ID ${userId} not found`
+            });
+        }
+
+        // Remove password from response
+        const { password, ...userWithoutPassword } = updatedUser;
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'User updated successfully',
+            data: userWithoutPassword
+        });
+    } catch (error) {
+        return handleError(res, 'updating user', error);
+    }
+}
+
+async function deleteUser(req, res) {
+    try {
+        const { userId } = req.params;
+        const deletedUser = await userQueries.deleteUser(userId);
+        
+        if (!deletedUser) {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: `User with ID ${userId} not found`
+            });
+        }
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'User deleted successfully',
+            data: { id: userId }
+        });
+    } catch (error) {
+        return handleError(res, 'deleting user', error);
+    }
 }
 
 module.exports = {
-  getUsers: handleUserOperation('getAll'),
-  getUserById: handleUserOperation('getOne'),
-  createUser: handleUserOperation('create'),
-  updateUser: handleUserOperation('update'),
-  deleteUser: handleUserOperation('delete')
+    getUsers,
+    getUserById,
+    createUser,
+    updateUser,
+    deleteUser
 };
