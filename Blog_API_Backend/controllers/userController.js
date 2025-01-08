@@ -1,11 +1,7 @@
 const userQueries = require('../prisma/queries/userQueries');
+const { matchedData } = require('express-validator');
 
 // Constants
-const ALLOWED_FIELDS = {
-    create: ['email', 'name', 'username', 'password', 'roleId'],
-    update: ['name', 'username', 'password', 'roleId']
-};
-
 const HTTP_STATUS = {
     OK: 200,
     CREATED: 201,
@@ -15,18 +11,6 @@ const HTTP_STATUS = {
 };
 
 // Helper Functions
-function sanitizeData(data, fields) {
-    return Object.entries(data).reduce((sanitized, [key, val]) => {
-        if (fields.includes(key)) {
-            // Don't trim password field
-            sanitized[key] = typeof val === 'string' && key !== 'password' 
-                ? val.trim() 
-                : val;
-        }
-        return sanitized;
-    }, {});
-}
-
 function handleError(res, operation, error) {
     console.error(`Error ${operation}:`, error);
     return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
@@ -70,7 +54,7 @@ async function getUserById(req, res) {
 
 async function createUser(req, res) {
     try {
-        const createData = sanitizeData(req.body, ALLOWED_FIELDS.create);
+        const createData = matchedData(req);
         const user = await userQueries.postUsers(createData);
         
         // Remove password from response
@@ -88,7 +72,7 @@ async function createUser(req, res) {
 async function updateUser(req, res) {
     try {
         const { userId } = req.params;
-        const updateData = sanitizeData(req.body, ALLOWED_FIELDS.update);
+        const updateData = matchedData(req);
         const updatedUser = await userQueries.putUser(userId, updateData);
         
         if (!updatedUser) {

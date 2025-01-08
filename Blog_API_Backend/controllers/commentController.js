@@ -1,11 +1,7 @@
 const commentQueries = require('../prisma/queries/commentQueries');
+const { matchedData } = require('express-validator');
 
 // Constants
-const ALLOWED_FIELDS = {
-    create: ['content', 'userId', 'blogId', 'parentId'],
-    update: ['content']
-};
-
 const HTTP_STATUS = {
     OK: 200,
     CREATED: 201,
@@ -15,15 +11,6 @@ const HTTP_STATUS = {
 };
 
 // Helper Functions
-function sanitizeData(data, fields) {
-    return Object.entries(data).reduce((sanitized, [key, val]) => {
-        if (fields.includes(key)) {
-            sanitized[key] = typeof val === 'string' ? val.trim() : val;
-        }
-        return sanitized;
-    }, {});
-}
-
 function handleError(res, operation, error) {
     console.error(`Error ${operation}:`, error);
     return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
@@ -81,7 +68,7 @@ async function getCommentById(req, res) {
 
 async function createComment(req, res) {
     try {
-        const createData = sanitizeData(req.body, ALLOWED_FIELDS.create);
+        const createData = matchedData(req);
         const comment = await commentQueries.postComment(createData);
         
         return res.status(HTTP_STATUS.CREATED).json({
@@ -96,7 +83,7 @@ async function createComment(req, res) {
 async function updateComment(req, res) {
     try {
         const { commentId } = req.params;
-        const updateData = sanitizeData(req.body, ALLOWED_FIELDS.update);
+        const updateData = matchedData(req);
         const updatedComment = await commentQueries.putComment(commentId, updateData);
         
         if (!updatedComment) {

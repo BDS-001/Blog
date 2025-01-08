@@ -1,11 +1,7 @@
 const blogQueries = require('../prisma/queries/blogQueries');
+const { matchedData } = require('express-validator');
 
 // Constants
-const ALLOWED_FIELDS = {
-    create: ['title', 'content', 'userId', 'isPublic', 'slug'],
-    update: ['title', 'content', 'isPublic', 'slug', 'views']
-};
-
 const HTTP_STATUS = {
     OK: 200,
     CREATED: 201,
@@ -58,7 +54,7 @@ async function getBlogById(req, res) {
 
 async function createBlog(req, res) {
     try {
-        const createData = sanitizeData(req.body, ALLOWED_FIELDS.create);
+        const createData = matchedData(req);
         const blog = await blogQueries.postBlog(createData);
         
         return res.status(HTTP_STATUS.CREATED).json({
@@ -73,7 +69,7 @@ async function createBlog(req, res) {
 async function updateBlog(req, res) {
     try {
         const { blogId } = req.params;
-        const updateData = sanitizeData(req.body, ALLOWED_FIELDS.update);
+        const updateData = matchedData(req);
         const updatedBlog = await blogQueries.putBlog(blogId, updateData);
         
         if (!updatedBlog) {
