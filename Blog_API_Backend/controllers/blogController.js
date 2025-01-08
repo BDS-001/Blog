@@ -34,7 +34,7 @@ async function getBlogs(req, res) {
 
 async function getBlogById(req, res) {
     try {
-        const { blogId } = req.params;
+        const { blogId } = matchedData(req, { locations: ['params'] });
         const blog = await blogQueries.getBlogById(blogId);
         
         if (!blog) {
@@ -54,7 +54,7 @@ async function getBlogById(req, res) {
 
 async function createBlog(req, res) {
     try {
-        const createData = matchedData(req);
+        const createData = matchedData(req, { locations: ['body'] });
         const blog = await blogQueries.postBlog(createData);
         
         return res.status(HTTP_STATUS.CREATED).json({
@@ -68,8 +68,8 @@ async function createBlog(req, res) {
 
 async function updateBlog(req, res) {
     try {
-        const { blogId } = req.params;
-        const updateData = matchedData(req);
+        const { blogId } = matchedData(req, { locations: ['params'] });
+        const updateData = matchedData(req, { locations: ['body'] });
         const updatedBlog = await blogQueries.putBlog(blogId, updateData);
         
         if (!updatedBlog) {
@@ -89,7 +89,7 @@ async function updateBlog(req, res) {
 
 async function deleteBlog(req, res) {
     try {
-        const { blogId } = req.params;
+        const { blogId } = matchedData(req, { locations: ['params'] });
         const deletedBlog = await blogQueries.deleteBlog(blogId);
         
         if (!deletedBlog) {

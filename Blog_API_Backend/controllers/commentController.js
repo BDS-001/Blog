@@ -34,7 +34,7 @@ async function getAllComments(req, res) {
 
 async function getBlogComments(req, res) {
     try {
-        const { blogId } = req.params;
+        const { blogId } = matchedData(req, { locations: ['params'] });
         const comments = await commentQueries.getCommentsByBlogId(blogId);
         
         return res.status(HTTP_STATUS.OK).json({
@@ -48,7 +48,7 @@ async function getBlogComments(req, res) {
 
 async function getCommentById(req, res) {
     try {
-        const { commentId } = req.params;
+        const { commentId } = matchedData(req, { locations: ['params'] });
         const comment = await commentQueries.getCommentById(commentId);
         
         if (!comment) {
@@ -68,7 +68,7 @@ async function getCommentById(req, res) {
 
 async function createComment(req, res) {
     try {
-        const createData = matchedData(req);
+        const createData = matchedData(req, { locations: ['body'] })
         const comment = await commentQueries.postComment(createData);
         
         return res.status(HTTP_STATUS.CREATED).json({
@@ -82,8 +82,8 @@ async function createComment(req, res) {
 
 async function updateComment(req, res) {
     try {
-        const { commentId } = req.params;
-        const updateData = matchedData(req);
+        const { commentId } = matchedData(req, { locations: ['params'] });
+        const updateData = matchedData(req, { locations: ['body'] });
         const updatedComment = await commentQueries.putComment(commentId, updateData);
         
         if (!updatedComment) {
@@ -103,7 +103,7 @@ async function updateComment(req, res) {
 
 async function deleteComment(req, res) {
     try {
-        const { commentId } = req.params;
+        const { commentId } = matchedData(req, { locations: ['params'] });
         const deletedComment = await commentQueries.deleteComment(commentId);
         
         if (!deletedComment) {

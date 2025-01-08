@@ -34,7 +34,7 @@ async function getUsers(req, res) {
 
 async function getUserById(req, res) {
     try {
-        const { userId } = req.params;
+        const { userId } = matchedData(req, { locations: ['params'] });
         const user = await userQueries.getUserById(userId);
         
         if (!user) {
@@ -54,7 +54,7 @@ async function getUserById(req, res) {
 
 async function createUser(req, res) {
     try {
-        const createData = matchedData(req);
+        const createData = matchedData(req, { locations: ['body'] })
         const user = await userQueries.postUsers(createData);
         
         // Remove password from response
@@ -71,8 +71,8 @@ async function createUser(req, res) {
 
 async function updateUser(req, res) {
     try {
-        const { userId } = req.params;
-        const updateData = matchedData(req);
+        const { userId } = matchedData(req, { locations: ['params'] });
+        const updateData = matchedData(req, { locations: ['body'] })
         const updatedUser = await userQueries.putUser(userId, updateData);
         
         if (!updatedUser) {
@@ -95,7 +95,7 @@ async function updateUser(req, res) {
 
 async function deleteUser(req, res) {
     try {
-        const { userId } = req.params;
+        const { userId } = matchedData(req, { locations: ['params'] });
         const deletedUser = await userQueries.deleteUser(userId);
         
         if (!deletedUser) {
