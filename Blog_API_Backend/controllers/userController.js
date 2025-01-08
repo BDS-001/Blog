@@ -57,12 +57,9 @@ async function createUser(req, res) {
         const createData = matchedData(req, { locations: ['body'] })
         const user = await userQueries.postUsers(createData);
         
-        // Remove password from response
-        const { password, ...userWithoutPassword } = user;
-        
         return res.status(HTTP_STATUS.CREATED).json({
             message: 'User created successfully',
-            data: userWithoutPassword
+            data: user
         });
     } catch (error) {
         return handleError(res, 'creating user', error);
@@ -81,12 +78,9 @@ async function updateUser(req, res) {
             });
         }
 
-        // Remove password from response
-        const { password, ...userWithoutPassword } = updatedUser;
-
         return res.status(HTTP_STATUS.OK).json({
             message: 'User updated successfully',
-            data: userWithoutPassword
+            data: updatedUser
         });
     } catch (error) {
         return handleError(res, 'updating user', error);
