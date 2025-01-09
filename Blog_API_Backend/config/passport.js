@@ -7,14 +7,20 @@ const userQueries = require('../prisma/queries/userQueries')
 // JWT Options
 const options = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: process.env.JWT_SECRET
+    secretOrKey: process.env.JWT_SECRET,
+    algorithms: ['HS256'],
+    ignoreExpiration: false, 
 }
 
 passport.use(
     new JwtStrategy(options, async (jwtPayload, done) => {
         try {
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            if (jwtPayload.exp && jwtPayload.exp < currentTimestamp) {
+                return done(null, false);
+            }
+
             const user = await userQueries.getUserById(jwtPayload.id);
-            
             if (user) {
               return done(null, user);
             } else {
