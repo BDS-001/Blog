@@ -1,6 +1,6 @@
 const passport = require('passport');
 
-const isAuthenticated = (req, res, next) => {
+function isAuthenticated (req, res, next) {
     passport.authenticate('jwt', {session: false}, (err, user, info) => {
         if (err) {
             return res.status(500).json({error: 'Internal Server Error'})
