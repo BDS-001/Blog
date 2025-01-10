@@ -42,17 +42,11 @@ describe('User Routes', () => {
 
   describe('POST /api/v1/users', () => {
     it('should create a new user', async () => {
-      const newUser = {
-        email: 'new@example.com',
-        name: 'New User',
-        username: 'newuser',
-        password: 'NewPass123!',
-        roleId: 1
-      };
+      const userData = await createTestUser();
 
       const response = await request(app)
         .post('/api/v1/users')
-        .send(newUser)
+        .send(userData)
         .expect(201);
 
       expect(response.body.data.email).toBe(newUser.email);
