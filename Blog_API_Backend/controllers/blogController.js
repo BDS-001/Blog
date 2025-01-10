@@ -52,6 +52,20 @@ async function getBlogById(req, res) {
     }
 }
 
+async function getUserBlogs(req, res) {
+    try {
+        const { userId } = matchedData(req, {locations: ['params']})
+        const blogs = await blogQueries.getBlogs({userId: userId})
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'User blogs retrieved successfully',
+            data: blogs
+        });
+    } catch(error) {
+        return handleError(res, 'fetching user blog', error)
+    }
+}
+
 async function createBlog(req, res) {
     try {
         const createData = matchedData(req, { locations: ['body'] });
@@ -112,5 +126,6 @@ module.exports = {
     getBlogById,
     createBlog,
     updateBlog,
-    deleteBlog
+    deleteBlog,
+    getUserBlogs
 };
