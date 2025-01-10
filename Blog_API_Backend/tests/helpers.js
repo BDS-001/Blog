@@ -51,18 +51,23 @@ async function createTestUser(overrides = {}) {
 }
 
 async function createTestBlog(userId, overrides = {}) {
-  try {
-    return await prisma.blog.create({
-      data: {
-        title: `Test Blog ${Date.now()}`,
-        content: 'This is a test blog post content that needs to be at least 100 characters long. Adding more content to ensure we meet the minimum length requirement for validation.',
-        userId: userId,
-        isPublic: true,
-        slug: `test-blog-${Date.now()}`,
-        ...overrides
-      }
-    });
-  } catch (error) {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(7);
+    const title = `Test Blog ${timestamp}_${randomString}`;
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    
+    try {
+      return await prisma.blog.create({
+        data: {
+          title,
+          slug,
+          content: '...content...',
+          userId,
+          isPublic: true,
+          ...overrides
+        }
+      });
+    } catch (error) {
     console.error('Error creating test blog:', error);
     throw error;
   }
