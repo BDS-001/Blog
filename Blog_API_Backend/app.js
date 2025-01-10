@@ -15,10 +15,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/v1', apiRouter);
 
 // --- Server Configuration and Startup ---
-const PORT = parseInt(process.env.USE_PORT, 10) || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Visit: http://localhost:${PORT}/`);
-});
+if (require.main === module) {
+    const PORT = parseInt(process.env.USE_PORT, 10) || 3000;
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+        console.log(`Visit: http://localhost:${PORT}/`);
+    });
+}
 
 module.exports = app
