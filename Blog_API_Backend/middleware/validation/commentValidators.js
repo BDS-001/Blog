@@ -51,4 +51,4 @@ const commentValidators = {
     ],
   };
 
-module.exports = {commentValidators}
+module.exports = commentValidators
