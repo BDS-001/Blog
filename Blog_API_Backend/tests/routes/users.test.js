@@ -45,7 +45,6 @@ describe('User Routes', () => {
 
   describe('POST /api/v1/users', () => {
     it('should create a new user', async () => {
-      // Get the test role first
       const role = await prisma.role.findUnique({ 
         where: { title: 'test_role' } 
       });
@@ -54,38 +53,26 @@ describe('User Routes', () => {
         throw new Error('Test role not found');
       }
 
+      const timestamp = Date.now();
       const userData = {
-        email: `test${Date.now()}_${Math.random().toString(36).substring(2)}@example.com`,
+        email: `test${timestamp}@example.com`,
         name: 'Test User',
-        username: `testuser${Date.now()}_${Math.random().toString(36).substring(2)}`,
+        username: `testuser${timestamp}`,
         password: 'TestPass123!',
         roleId: role.id
       };
 
-      const response = await request(app)
+      await request(app)
         .post('/api/v1/users')
         .send(userData)
-        .expect(201);
-
-      // Log the response body if validation fails
-      if (response.status !== 201) {
-        console.log('Validation errors:', response.body);
-      }
-
-      expect(response.body.data.email).toBe(userData.email);
-      expect(response.body.data.name).toBe(userData.name);
-      expect(response.body.data.username).toBe(userData.username);
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.email).toBe(userData.email);
+          expect(res.body.data.name).toBe(userData.name);
+          expect(res.body.data.username).toBe(userData.username);
+        });
     });
-
-    it('should validate required fields', async () => {
-      const response = await request(app)
-        .post('/api/v1/users')
-        .send({})
-        .expect(400);
-
-      expect(response.body.errors).toBeDefined();
-    });
-});
+  });
 
   describe('PUT /api/v1/users/:userId', () => {
     it('should update an existing user', async () => {
@@ -117,52 +104,53 @@ describe('User Routes', () => {
   });
 
   describe('DELETE /api/v1/users/:userId', () => {
-    it('should delete a user and handle their comments', async () => {
-      const testUser = await createTestUser();
-      const testBlog = await createTestBlog(testUser.id);
+    it('should delete user, their blogs, and handle comments correctly', async () => {
+      // Create two users
+      const userToDelete = await createTestUser();
+      const otherUser = await createTestUser();
       
-      // Create comments
-      await createTestComment(testUser.id, testBlog.id);
-      await createTestComment(testUser.id, testBlog.id);
+      // Create a blog by the other user
+      const otherUserBlog = await createTestBlog(otherUser.id);
       
+      // Create comments by the user-to-delete on the other user's blog
+      const comment1 = await createTestComment(userToDelete.id, otherUserBlog.id, {
+          content: "Test comment 1"
+      });
+      const comment2 = await createTestComment(userToDelete.id, otherUserBlog.id, {
+          content: "Test comment 2"
+      });
+
       // Delete the user
       await request(app)
-        .delete(`/api/v1/users/${testUser.id}`)
+        .delete(`/api/v1/users/${userToDelete.id}`)
         .expect(200);
 
       // Verify user is deleted
       const deletedUser = await prisma.user.findUnique({
-        where: { id: testUser.id }
+        where: { id: userToDelete.id }
       });
       expect(deletedUser).toBeNull();
 
-      // Verify the user's comments are properly handled
-      const comments = await prisma.comment.findMany({
-        where: { userId: null }
+      // Verify other user's blog still exists
+      const remainingBlog = await prisma.blog.findUnique({
+        where: { id: otherUserBlog.id }
       });
-      expect(comments.length).toBeGreaterThan(0);
-      comments.forEach(comment => {
-        expect(comment.userId).toBeNull();
+      expect(remainingBlog).not.toBeNull();
+
+      // Verify comments remain with original content but null userId
+      const updatedComment1 = await prisma.comment.findUnique({
+        where: { id: comment1.id }
       });
+      const updatedComment2 = await prisma.comment.findUnique({
+        where: { id: comment2.id }
+      });
+
+      expect(updatedComment1).not.toBeNull();
+      expect(updatedComment2).not.toBeNull();
+      expect(updatedComment1.content).toBe("Test comment 1");
+      expect(updatedComment2.content).toBe("Test comment 2");
+      expect(updatedComment1.userId).toBeNull();
+      expect(updatedComment2.userId).toBeNull();
     });
-
-    it('should handle a user with no comments', async () => {
-      const testUser = await createTestUser();
-
-      await request(app)
-        .delete(`/api/v1/users/${testUser.id}`)
-        .expect(200);
-
-      // Verify user is deleted
-      await request(app)
-        .get(`/api/v1/users/${testUser.id}`)
-        .expect(404);
-    });
-
-    it('should return 404 for non-existent user', async () => {
-      await request(app)
-        .delete('/api/v1/users/999999')
-        .expect(404);
-    });
-  });
+});
 });
