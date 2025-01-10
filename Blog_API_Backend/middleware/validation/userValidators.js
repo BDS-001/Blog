@@ -85,7 +85,13 @@ const userValidators = {
       .optional()
       .isInt({ min: 1 })
       .withMessage('Valid role ID is required if provided')
-  ]
+  ],
+  
+  getUserById: [
+    param('userId')
+      .isInt({ min: 1 })
+      .withMessage('User ID must be a positive integer')
+  ],
 };
 
 module.exports = userValidators;

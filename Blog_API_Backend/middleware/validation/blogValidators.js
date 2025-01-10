@@ -79,7 +79,19 @@ const blogValidators = {
       .optional()
       .isBoolean()
       .withMessage('isPublic must be a boolean value')
-  ]
+  ],
+
+  getBlogById: [
+    param('blogId')
+      .isInt({ min: 1 })
+      .withMessage('Blog ID must be a positive integer')
+  ],
+
+  getUserBlogs: [
+    param('userId')
+      .isInt({ min: 1 })
+      .withMessage('User ID must be a positive integer')
+  ],
 };
 
 module.exports = blogValidators;
