@@ -1,7 +1,7 @@
-const { validationResult } = require('express-validator');
-const { blogValidators } = require('./validators/blogValidators');
-const { userValidators } = require('./validators/userValidators');
-const { commentValidators } = require('./validators/commentValidators');
+const validationResult = require('express-validator');
+const blogValidators = require('./validators/blogValidators');
+const userValidators = require('./validators/userValidators');
+const commentValidators = require('./validators/commentValidators');
 
 
 const validators = {
@@ -29,4 +29,4 @@ function validateRequest(resource, operation) {
     ];
   }
 
-module.exports = {validateRequest}
+module.exports = validateRequest

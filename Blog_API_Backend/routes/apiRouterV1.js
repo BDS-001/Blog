@@ -2,7 +2,7 @@ const router = require("express").Router();
 const userController = require('../controllers/userController')
 const commentsController = require('../controllers/commentController')
 const blogController = require('../controllers/blogController')
-const { validateRequest } = require('../middleware/validateRequest')
+const validateRequest = require('../middleware/validation/validateRequest')
 //const { isAuthenticated } = require('../middleware/authMiddleware')
 
 // User Routes
