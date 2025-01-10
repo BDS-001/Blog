@@ -63,12 +63,20 @@ async function getBlogById(blogId) {
 
 async function deleteBlog(blogId) {
     try {
-      const blog = await prisma.blog.delete({
-        where: {
-          id: blogId
+        const existingBlog = await prisma.blog.findUnique({
+            where: { id: blogId }
+        });
+
+        if (!existingBlog) {
+            return null; 
         }
-      });
-      return blog
+
+        const blog = await prisma.blog.delete({
+            where: {
+                id: blogId
+            }
+        });
+        return blog
     } catch (error) {
       throw new Error(`Failed to delete blog: ${error.message}`);
     }
