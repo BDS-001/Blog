@@ -94,9 +94,21 @@ async function getCommentById(commentId) {
 
 async function deleteComment(commentId) {
   try {
-    const comment = await prisma.comment.delete({
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: commentId }
+    });
+
+    if (!existingComment) {
+      return null;
+    }
+    
+    const comment = await prisma.comment.update({
       where: {
         id: commentId
+      },
+      data: {
+        content: '[deleted]',
+        updatedAt: new Date()
       }
     });
     return comment

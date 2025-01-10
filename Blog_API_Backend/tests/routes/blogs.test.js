@@ -64,12 +64,7 @@ describe('Blog Routes', () => {
 
   describe('POST /api/v1/blogs', () => {
     it('should create a new blog', async () => {
-      const newBlog = {
-        title: 'Test Blog',
-        content: 'This is a test blog post content that needs to be at least 100 characters long. Adding more content to ensure we meet the minimum length requirement for validation.',
-        userId: testUser.id,
-        isPublic: true
-      };
+      const newBlog = createTestBlog()
 
       const response = await request(app)
         .post('/api/v1/blogs')
@@ -107,7 +102,7 @@ describe('Blog Routes', () => {
     it('should update an existing blog', async () => {
       const testBlog = await createTestBlog(testUser.id);
       const updateData = {
-        title: 'Updated Blog Title',
+        title: `Updated Blog Title ${Date.now()}`,
         content: 'This is updated content that needs to be at least 100 characters long. Adding more content to ensure we meet the minimum length requirement for validation.'
       };
 

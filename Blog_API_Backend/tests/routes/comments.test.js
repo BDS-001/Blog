@@ -139,34 +139,82 @@ describe('Comment Routes', () => {
   });
 
   describe('DELETE /api/v1/comments/:commentId', () => {
-    it('should delete an existing comment', async () => {
+    it('should mark a comment as deleted while preserving the comment thread', async () => {
       const testComment = await createTestComment(testUser.id, testBlog.id);
 
       await request(app)
         .delete(`/api/v1/comments/${testComment.id}`)
         .expect(200);
 
-      // Verify comment is deleted
-      await request(app)
+      // Verify comment content is changed to [deleted]
+      const response = await request(app)
         .get(`/api/v1/comments/${testComment.id}`)
-        .expect(404);
+        .expect(200);
+
+      expect(response.body.data.content).toBe('[deleted]');
     });
 
-    it('should delete a comment and its replies', async () => {
+    it('should preserve reply structure when parent comment is deleted', async () => {
+      // Create a parent comment
       const parentComment = await createTestComment(testUser.id, testBlog.id);
-      const replyComment = await createTestComment(testUser.id, testBlog.id, { parentId: parentComment.id });
+      
+      // Create a reply
+      const reply = await createTestComment(testUser.id, testBlog.id, { 
+        parentId: parentComment.id 
+      });
 
+      // Delete the parent comment
       await request(app)
         .delete(`/api/v1/comments/${parentComment.id}`)
         .expect(200);
 
-      // Verify both comments are deleted
-      await request(app)
+      // Verify parent comment is marked as deleted
+      const parentResponse = await request(app)
         .get(`/api/v1/comments/${parentComment.id}`)
-        .expect(404);
+        .expect(200);
+
+      expect(parentResponse.body.data.content).toBe('[deleted]');
+
+      // Verify reply still exists unchanged
+      const replyResponse = await request(app)
+        .get(`/api/v1/comments/${reply.id}`)
+        .expect(200);
+
+      expect(replyResponse.body.data.content).not.toBe('[deleted]');
+      expect(replyResponse.body.data.parentId).toBe(parentComment.id);
+    });
+
+    it('should handle deeply nested comment threads', async () => {
+      // Create a chain of nested comments
+      const parentComment = await createTestComment(testUser.id, testBlog.id);
+      const reply1 = await createTestComment(testUser.id, testBlog.id, { 
+        parentId: parentComment.id 
+      });
+      const reply2 = await createTestComment(testUser.id, testBlog.id, { 
+        parentId: reply1.id 
+      });
+
+      // Delete the middle comment
       await request(app)
-        .get(`/api/v1/comments/${replyComment.id}`)
-        .expect(404);
+        .delete(`/api/v1/comments/${reply1.id}`)
+        .expect(200);
+
+      // Verify middle comment is marked as deleted
+      const deletedResponse = await request(app)
+        .get(`/api/v1/comments/${reply1.id}`)
+        .expect(200);
+      expect(deletedResponse.body.data.content).toBe('[deleted]');
+
+      // Verify parent and child comments remain unchanged
+      const parentResponse = await request(app)
+        .get(`/api/v1/comments/${parentComment.id}`)
+        .expect(200);
+      expect(parentResponse.body.data.content).not.toBe('[deleted]');
+
+      const childResponse = await request(app)
+        .get(`/api/v1/comments/${reply2.id}`)
+        .expect(200);
+      expect(childResponse.body.data.content).not.toBe('[deleted]');
     });
 
     it('should return 404 for non-existent comment', async () => {

@@ -90,12 +90,25 @@ async function putUser(userId, newData) {
 
 async function deleteUser(userId) {
     try {
-        const user = await prisma.user.delete({
-            where: {
-                id: userId
-            }
+        const existingUser = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+      
+        if (!existingUser) {
+            return null;
+        }
+        return await prisma.$transaction(async (tx) => {
+            await tx.comment.updateMany({
+                where: { userId: userId },
+                data: { userId: null }
+            });
+
+            const user = await tx.user.delete({
+                where: { id: userId }
+            })
+
+            return user
         })
-        return user
     } catch (error) {
         throw new Error(`Failed to delete user: ${error.message}`);
     }
