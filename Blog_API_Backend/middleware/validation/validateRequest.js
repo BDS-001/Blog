@@ -2,18 +2,13 @@ const { validationResult } = require('express-validator');
 const blogValidators = require('./blogValidators');
 const userValidators = require('./userValidators');
 const commentValidators = require('./commentValidators');
+const paramValidators = require('./paramValidators');
 
 const validators = {
   blog: blogValidators,
   user: userValidators,
   comment: commentValidators,
-  param: {
-    getUserById: [...userValidators.getUserById],
-    getBlogById: [...blogValidators.getBlogById],
-    getCommentById: [...commentValidators.getCommentById],
-    getUserBlogs: [...blogValidators.getUserBlogs],
-    getBlogComments: [...commentValidators.getBlogComments]
-  }
+  param: paramValidators,
 };
 
 function validateRequest(resource, operation) {

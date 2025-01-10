@@ -43,10 +43,6 @@ const userValidators = {
 
   // Update user validation rules
   update: [
-    param('userId')
-      .isInt({ min: 1 })
-      .withMessage('Valid user ID is required'),
-
     body('email')
       .optional()
       .trim()

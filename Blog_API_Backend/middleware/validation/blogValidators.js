@@ -42,10 +42,6 @@ const blogValidators = {
 
   // Update blog validation rules
   update: [
-    param('blogId')
-      .isInt({ min: 1 })
-      .withMessage('Valid blog ID is required'),
-
     // Optional title update with slug generation
     body('title')
       .optional()
@@ -79,19 +75,7 @@ const blogValidators = {
       .optional()
       .isBoolean()
       .withMessage('isPublic must be a boolean value')
-  ],
-
-  getBlogById: [
-    param('blogId')
-      .isInt({ min: 1 })
-      .withMessage('Blog ID must be a positive integer')
-  ],
-
-  getUserBlogs: [
-    param('userId')
-      .isInt({ min: 1 })
-      .withMessage('User ID must be a positive integer')
-  ],
+  ]
 };
 
 module.exports = blogValidators;
