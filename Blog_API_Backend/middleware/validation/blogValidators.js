@@ -20,7 +20,8 @@ const blogValidators = {
     body('slug')
       .custom((_value, { req }) => {
         const slug = generateSlug(req.body.title);
-        return slug;
+        req.body.slug = slug
+        return true;
       }),
 
     body('content')
@@ -56,7 +57,9 @@ const blogValidators = {
       .custom((_value, { req }) => {
         // Only generate new slug if title is being updated
         if (req.body.title) {
-          return generateSlug(req.body.title);
+          const slug = generateSlug(req.body.title);
+          req.body.slug = slug
+          return true
         }
         // If no title provided, skip slug update
         return undefined;
