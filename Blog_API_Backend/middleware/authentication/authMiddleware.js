@@ -12,7 +12,7 @@ function isAuthenticated(requiredPermissions = []) {
             }
 
             const hasPermissions = requiredPermissions.every(permission => {
-                user.role[permission] === true
+                return user.role[permission] === true
             })
 
             if (requiredPermissions.length > 0 && !hasPermissions) {
