@@ -15,11 +15,6 @@ const options = {
 passport.use(
     new JwtStrategy(options, async (jwtPayload, done) => {
         try {
-            const currentTimestamp = Math.floor(Date.now() / 1000);
-            if (jwtPayload.exp && jwtPayload.exp < currentTimestamp) {
-                return done(null, false);
-            }
-
             const user = await userQueries.getUserById(jwtPayload.id);
             if (user) {
               return done(null, user);
