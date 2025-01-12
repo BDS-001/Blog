@@ -3,6 +3,7 @@ const userController = require('../controllers/userController')
 const commentsController = require('../controllers/commentController')
 const blogController = require('../controllers/blogController')
 const validateRequest = require('../middleware/validation/validateRequest')
+const { isAuthenticated } = require('../middleware/authentication/authMiddleware')
 
 // User Routes
 router.get("/users", userController.getUsers);
@@ -35,6 +36,7 @@ router.get("/comments/:commentId",
     commentsController.getCommentById
 );
 router.post("/comments", 
+    isAuthenticated(['canComment']),
     validateRequest('comment', 'create'),
     commentsController.createComment
 );
