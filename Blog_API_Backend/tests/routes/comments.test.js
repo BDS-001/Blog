@@ -1,14 +1,18 @@
 const request = require('supertest');
 const app = require('../../app');
-const { createTestUser, createTestBlog, createTestComment } = require('../helpers');
+const { createTestUser, createTestBlog, createTestComment, generateTestToken } = require('../helpers');
+const prisma = require('../../prisma/prismaClient');
+const { createComment } = require('../../controllers/commentController');
 
 describe('Comment Routes', () => {
   let testUser;
   let testBlog;
+  let authToken;
 
   beforeEach(async () => {
     testUser = await createTestUser();
     testBlog = await createTestBlog(testUser.id);
+    authToken = await generateTestToken(testUser);
   });
 
   describe('GET /api/v1/comments', () => {
@@ -64,7 +68,7 @@ describe('Comment Routes', () => {
   });
 
   describe('POST /api/v1/comments', () => {
-    it('should create a new comment', async () => {
+    it('should create a new comment when authenticated with proper permissions', async () => {
       const newComment = {
         content: 'Test comment content',
         userId: testUser.id,
@@ -73,12 +77,61 @@ describe('Comment Routes', () => {
 
       const response = await request(app)
         .post('/api/v1/comments')
+        .set('Authorization', `Bearer ${authToken}`)
         .send(newComment)
         .expect(201);
 
       expect(response.body.data.content).toBe(newComment.content);
       expect(response.body.data.userId).toBe(testUser.id);
       expect(response.body.data.blogId).toBe(testBlog.id);
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const newComment = {
+        content: 'Test comment content',
+        userId: testUser.id,
+        blogId: testBlog.id
+      };
+
+      await request(app)
+        .post('/api/v1/comments')
+        .send(newComment)
+        .expect(401);
+    });
+
+    it('should return 403 when user does not have comment permission', async () => {
+      // Create or update a role that cannot comment
+      const noCommentRole = await prisma.role.upsert({
+        where: { title: 'no_comment_role' },
+        update: {
+          canComment: false,
+          canCreateBlog: false,
+          canModerate: false,
+          isAdmin: false
+        },
+        create: {
+          title: 'no_comment_role',
+          canComment: false,
+          canCreateBlog: false,
+          canModerate: false,
+          isAdmin: false
+        }
+      });
+
+      const restrictedUser = await createTestUser({ roleId: noCommentRole.id });
+      const restrictedToken = await generateTestToken(restrictedUser);
+
+      const newComment = {
+        content: 'Test comment content',
+        userId: restrictedUser.id,
+        blogId: testBlog.id
+      };
+
+      await request(app)
+        .post('/api/v1/comments')
+        .set('Authorization', `Bearer ${restrictedToken}`)
+        .send(newComment)
+        .expect(403);
     });
 
     it('should create a reply to another comment', async () => {
@@ -93,6 +146,7 @@ describe('Comment Routes', () => {
 
       const response = await request(app)
         .post('/api/v1/comments')
+        .set('Authorization', `Bearer ${authToken}`)
         .send(replyComment)
         .expect(201);
 
@@ -102,6 +156,7 @@ describe('Comment Routes', () => {
     it('should validate required fields', async () => {
       const response = await request(app)
         .post('/api/v1/comments')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({})
         .expect(400);
 

@@ -1,4 +1,10 @@
+// setup.js
 const prisma = require('../prisma/prismaClient');
+const passport = require('passport');
+require('../config/passport'); // Import passport config
+
+// Ensure JWT_SECRET is set for tests
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
 
 beforeAll(async () => {
     try {
@@ -18,10 +24,10 @@ beforeAll(async () => {
       console.error('Error creating test role:', error);
       throw error;
     }
-  });
-  
-  // Clean up after each test
-  afterEach(async () => {
+});
+
+// Clean up after each test
+afterEach(async () => {
     try {
       // Clean up test data
       const deleteComments = prisma.comment.deleteMany();
@@ -38,9 +44,9 @@ beforeAll(async () => {
       console.error('Error cleaning up test data:', error);
       throw error;
     }
-  });
-  
-  // Disconnect Prisma after all tests
-  afterAll(async () => {
+});
+
+// Disconnect Prisma after all tests
+afterAll(async () => {
     await prisma.$disconnect();
-  });
+});

@@ -1,4 +1,24 @@
 const prisma = require('../prisma/prismaClient');
+const jwt = require('jsonwebtoken');
+
+async function generateTestToken(user) {
+  // Ensure we're using the same secret as Passport
+  const secret = process.env.JWT_SECRET || 'test-secret';
+  
+  // Create a payload that matches what Passport expects
+  return jwt.sign(
+    { 
+      id: user.id,
+      email: user.email,
+      role: user.role 
+    },
+    secret,
+    { 
+      expiresIn: '1h',
+      algorithm: 'HS256'  // Match the algorithm in Passport config
+    }
+  );
+}
 
 async function getTestRole() {
   try {
@@ -42,6 +62,9 @@ async function createTestUser(overrides = {}) {
         password: 'TestPass123!',
         roleId: role.id,
         ...overrides
+      },
+      include: {
+        role: true // Include the role in the response
       }
     });
   } catch (error) {
@@ -68,9 +91,9 @@ async function createTestBlog(userId, overrides = {}) {
         }
       });
     } catch (error) {
-    console.error('Error creating test blog:', error);
-    throw error;
-  }
+      console.error('Error creating test blog:', error);
+      throw error;
+    }
 }
 
 async function createTestComment(userId, blogId, overrides = {}) {
@@ -93,5 +116,6 @@ module.exports = {
   createTestUser,
   createTestBlog,
   createTestComment,
-  getTestRole
+  getTestRole,
+  generateTestToken
 };
