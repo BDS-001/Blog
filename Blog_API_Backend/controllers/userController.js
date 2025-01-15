@@ -1,5 +1,7 @@
 const userQueries = require('../prisma/queries/userQueries');
 const { matchedData } = require('express-validator');
+const bcrypt = require('bcryptjs');
+
 
 // Constants
 const HTTP_STATUS = {
@@ -10,7 +12,6 @@ const HTTP_STATUS = {
     INTERNAL_ERROR: 500
 };
 
-// Helper Functions
 function handleError(res, operation, error) {
     console.error(`Error ${operation}:`, error);
     return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
@@ -19,7 +20,6 @@ function handleError(res, operation, error) {
     });
 }
 
-// Handler Functions
 async function getUsers(req, res) {
     try {
         const users = await userQueries.getUsers();
@@ -55,6 +55,8 @@ async function getUserById(req, res) {
 async function createUser(req, res) {
     try {
         const createData = matchedData(req, { locations: ['body'] })
+        createData.password = await bcrypt.hash(createData.password, 10);
+        
         const user = await userQueries.postUsers(createData);
         
         return res.status(HTTP_STATUS.CREATED).json({
@@ -70,6 +72,11 @@ async function updateUser(req, res) {
     try {
         const { userId } = matchedData(req, { locations: ['params'] });
         const updateData = matchedData(req, { locations: ['body'] })
+
+        if (updateData.password) {
+            updateData.password = await bcrypt.hash(updateData.password, 10);
+        }
+
         const updatedUser = await userQueries.putUser(userId, updateData);
         
         if (!updatedUser) {

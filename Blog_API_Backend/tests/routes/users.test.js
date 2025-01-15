@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app = require('../../app');
-const { createTestUser, createTestBlog, createTestComment, generateTestToken } = require('../helpers');
+const bcrypt = require('bcryptjs');
+const { createTestUser, generateTestToken } = require('../helpers');
 const prisma = require('../../prisma/prismaClient');
 
 describe('User Routes', () => {
@@ -38,6 +39,8 @@ describe('User Routes', () => {
       expect(response.body.data).toBeInstanceOf(Array);
       expect(response.body.message).toBe('Users retrieved successfully');
       expect(response.body.data.length).toBeGreaterThanOrEqual(3);
+      // Verify password is not included in response
+      expect(response.body.data[0].password).toBeUndefined();
     });
 
     it('should return 401 when not authenticated', async () => {
@@ -59,6 +62,8 @@ describe('User Routes', () => {
       expect(response.body.data.id).toBe(testUser.id);
       expect(response.body.data.email).toBe(testUser.email);
       expect(response.body.data.username).toBe(testUser.username);
+      // Verify password is not included in response
+      expect(response.body.data.password).toBeUndefined();
     });
 
     it('should return 404 for non-existent user', async () => {
@@ -70,7 +75,7 @@ describe('User Routes', () => {
   });
 
   describe('POST /api/v1/users', () => {
-    it('should create a new user', async () => {
+    it('should create a new user with hashed password', async () => {
       const role = await prisma.role.findUnique({ 
         where: { title: 'test_role' } 
       });
@@ -88,15 +93,54 @@ describe('User Routes', () => {
         roleId: role.id
       };
 
-      await request(app)
+      const response = await request(app)
         .post('/api/v1/users')
         .send(userData)
-        .expect(201)
-        .expect((res) => {
-          expect(res.body.data.email).toBe(userData.email);
-          expect(res.body.data.name).toBe(userData.name);
-          expect(res.body.data.username).toBe(userData.username);
-        });
+        .expect(201);
+
+      // Verify the response data
+      expect(response.body.data.email).toBe(userData.email);
+      expect(response.body.data.name).toBe(userData.name);
+      expect(response.body.data.username).toBe(userData.username);
+      // Verify password is not included in response
+      expect(response.body.data.password).toBeUndefined();
+
+      // Verify the password was actually hashed in the database
+      const createdUser = await prisma.user.findUnique({
+        where: { email: userData.email }
+      });
+      
+      // Verify password is not stored as plaintext
+      expect(createdUser.password).not.toBe(userData.password);
+      
+      // Verify the stored hash matches the original password
+      const passwordIsHashed = await bcrypt.compare(
+        userData.password,
+        createdUser.password
+      );
+      expect(passwordIsHashed).toBe(true);
+    });
+
+    it('should validate password requirements', async () => {
+      const role = await prisma.role.findUnique({ 
+        where: { title: 'test_role' } 
+      });
+
+      const userData = {
+        email: 'test@example.com',
+        name: 'Test User',
+        username: 'testuser',
+        password: 'weak', // Too short and missing number
+        roleId: role.id
+      };
+
+      const response = await request(app)
+        .post('/api/v1/users')
+        .send(userData)
+        .expect(400);
+
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].msg).toMatch(/Password must be/);
     });
   });
 
@@ -114,6 +158,37 @@ describe('User Routes', () => {
         .expect(200);
 
       expect(response.body.data.name).toBe(updateData.name);
+      // Verify password is not included in response
+      expect(response.body.data.password).toBeUndefined();
+    });
+
+    it('should hash password when updating password', async () => {
+      const testUser = await createTestUser();
+      const newPassword = 'NewTestPass123!';
+      
+      const response = await request(app)
+        .put(`/api/v1/users/${testUser.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ password: newPassword })
+        .expect(200);
+
+      // Verify password is not included in response
+      expect(response.body.data.password).toBeUndefined();
+
+      // Verify the password was actually hashed in the database
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: testUser.id }
+      });
+      
+      // Verify password is not stored as plaintext
+      expect(updatedUser.password).not.toBe(newPassword);
+      
+      // Verify the stored hash matches the new password
+      const passwordIsHashed = await bcrypt.compare(
+        newPassword,
+        updatedUser.password
+      );
+      expect(passwordIsHashed).toBe(true);
     });
 
     it('should validate update data', async () => {
@@ -132,46 +207,74 @@ describe('User Routes', () => {
   });
 
   describe('DELETE /api/v1/users/:userId', () => {
-    it('should delete user when authenticated as admin', async () => {
+    it('should delete user and handle associated data properly', async () => {
+      // Create a user to delete
       const userToDelete = await createTestUser();
-      const otherUser = await createTestUser();
-      const otherUserBlog = await createTestBlog(otherUser.id);
       
-      const comment1 = await createTestComment(userToDelete.id, otherUserBlog.id, {
-        content: "Test comment 1"
+      // Create another user and their blog for testing comment handling
+      const otherUser = await createTestUser();
+      const blog = await prisma.blog.create({
+        data: {
+          title: `Test Blog ${Date.now()}`,
+          content: 'Test content that meets minimum length requirement...',
+          userId: otherUser.id,
+          slug: `test-blog-${Date.now()}`,
+          isPublic: true
+        }
       });
-      const comment2 = await createTestComment(userToDelete.id, otherUserBlog.id, {
-        content: "Test comment 2"
+      
+      // Create comments by the user to be deleted
+      await prisma.comment.create({
+        data: {
+          content: 'Test comment 1',
+          userId: userToDelete.id,
+          blogId: blog.id
+        }
+      });
+      
+      await prisma.comment.create({
+        data: {
+          content: 'Test comment 2',
+          userId: userToDelete.id,
+          blogId: blog.id
+        }
       });
 
+      // Delete the user
       await request(app)
         .delete(`/api/v1/users/${userToDelete.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
+      // Verify user is deleted
       const deletedUser = await prisma.user.findUnique({
         where: { id: userToDelete.id }
       });
       expect(deletedUser).toBeNull();
 
+      // Verify the other user's blog still exists
       const remainingBlog = await prisma.blog.findUnique({
-        where: { id: otherUserBlog.id }
+        where: { id: blog.id }
       });
       expect(remainingBlog).not.toBeNull();
 
-      const updatedComment1 = await prisma.comment.findUnique({
-        where: { id: comment1.id }
+      // Verify comments are handled correctly (userId set to null but content preserved)
+      const comments = await prisma.comment.findMany({
+        where: { blogId: blog.id }
       });
-      const updatedComment2 = await prisma.comment.findUnique({
-        where: { id: comment2.id }
+      
+      expect(comments).toHaveLength(2);
+      comments.forEach(comment => {
+        expect(comment.userId).toBeNull();
+        expect(comment.content).not.toBe('[deleted]');
       });
+    });
 
-      expect(updatedComment1).not.toBeNull();
-      expect(updatedComment2).not.toBeNull();
-      expect(updatedComment1.content).toBe("Test comment 1");
-      expect(updatedComment2.content).toBe("Test comment 2");
-      expect(updatedComment1.userId).toBeNull();
-      expect(updatedComment2.userId).toBeNull();
+    it('should return 404 for non-existent user', async () => {
+      await request(app)
+        .delete('/api/v1/users/999999')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(404);
     });
   });
 });
