@@ -18,11 +18,15 @@ const blogValidators = {
     
     // Slug validation that depends on title
     body('slug')
-      .custom((_value, { req }) => {
-        const slug = generateSlug(req.body.title);
-        req.body.slug = slug
-        return true;
-      }),
+      .customSanitizer((value, { req }) => {
+        // Only generate if title exists and is valid
+        if (req.body.title) {
+          return generateSlug(req.body.title);
+        }
+        return null;
+      })
+    .notEmpty()
+    .withMessage('Slug generation failed'),
 
     body('content')
       .trim()
@@ -54,16 +58,12 @@ const blogValidators = {
     
     // Update slug if title is provided
     body('slug')
-      .custom((_value, { req }) => {
-        // Only generate new slug if title is being updated
-        if (req.body.title) {
-          const slug = generateSlug(req.body.title);
-          req.body.slug = slug
-          return true
-        }
-        // If no title provided, skip slug update
-        return undefined;
+      .if(body('title').exists())
+      .customSanitizer((value, { req }) => {
+        return generateSlug(req.body.title);
       })
+      .notEmpty()
+      .withMessage('Slug generation failed')
       .optional(),
 
     body('content')
