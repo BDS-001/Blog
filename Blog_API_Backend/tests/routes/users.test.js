@@ -1,12 +1,29 @@
 const request = require('supertest');
 const app = require('../../app');
-const { createTestUser, createTestBlog, createTestComment } = require('../helpers');
+const { createTestUser, createTestBlog, createTestComment, generateTestToken } = require('../helpers');
 const prisma = require('../../prisma/prismaClient');
 
 describe('User Routes', () => {
+  let adminUser;
+  let adminToken;
+
+  beforeEach(async () => {
+    // Create an admin user with a unique role
+    adminUser = await createTestUser({
+      role: {
+        title: `admin_role_${Date.now()}`, // Ensure unique role title
+        canComment: true,
+        canCreateBlog: true,
+        canModerate: true,
+        isAdmin: true
+      }
+    });
+    adminToken = await generateTestToken(adminUser);
+  });
+
   describe('GET /api/v1/users', () => {
-    it('should return all users', async () => {
-      // Create test users directly using helper function
+    it('should return all users when authenticated as admin', async () => {
+      // Create additional test users
       await Promise.all([
         createTestUser(),
         createTestUser(),
@@ -15,20 +32,28 @@ describe('User Routes', () => {
 
       const response = await request(app)
         .get('/api/v1/users')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.data).toBeInstanceOf(Array);
       expect(response.body.message).toBe('Users retrieved successfully');
       expect(response.body.data.length).toBeGreaterThanOrEqual(3);
     });
+
+    it('should return 401 when not authenticated', async () => {
+      await request(app)
+        .get('/api/v1/users')
+        .expect(401);
+    });
   });
 
   describe('GET /api/v1/users/:userId', () => {
-    it('should return a specific user', async () => {
+    it('should return a specific user when authenticated as admin', async () => {
       const testUser = await createTestUser();
 
       const response = await request(app)
         .get(`/api/v1/users/${testUser.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.data.id).toBe(testUser.id);
@@ -39,6 +64,7 @@ describe('User Routes', () => {
     it('should return 404 for non-existent user', async () => {
       await request(app)
         .get('/api/v1/users/999999')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });
   });
@@ -75,7 +101,7 @@ describe('User Routes', () => {
   });
 
   describe('PUT /api/v1/users/:userId', () => {
-    it('should update an existing user', async () => {
+    it('should update an existing user when authenticated as admin', async () => {
       const testUser = await createTestUser();
       const updateData = {
         name: 'Updated Name'
@@ -83,6 +109,7 @@ describe('User Routes', () => {
 
       const response = await request(app)
         .put(`/api/v1/users/${testUser.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(updateData)
         .expect(200);
 
@@ -94,6 +121,7 @@ describe('User Routes', () => {
       
       const response = await request(app)
         .put(`/api/v1/users/${testUser.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           email: 'invalid-email'
         })
@@ -104,40 +132,33 @@ describe('User Routes', () => {
   });
 
   describe('DELETE /api/v1/users/:userId', () => {
-    it('should delete user, their blogs, and handle comments correctly', async () => {
-      // Create two users
+    it('should delete user when authenticated as admin', async () => {
       const userToDelete = await createTestUser();
       const otherUser = await createTestUser();
-      
-      // Create a blog by the other user
       const otherUserBlog = await createTestBlog(otherUser.id);
       
-      // Create comments by the user-to-delete on the other user's blog
       const comment1 = await createTestComment(userToDelete.id, otherUserBlog.id, {
-          content: "Test comment 1"
+        content: "Test comment 1"
       });
       const comment2 = await createTestComment(userToDelete.id, otherUserBlog.id, {
-          content: "Test comment 2"
+        content: "Test comment 2"
       });
 
-      // Delete the user
       await request(app)
         .delete(`/api/v1/users/${userToDelete.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // Verify user is deleted
       const deletedUser = await prisma.user.findUnique({
         where: { id: userToDelete.id }
       });
       expect(deletedUser).toBeNull();
 
-      // Verify other user's blog still exists
       const remainingBlog = await prisma.blog.findUnique({
         where: { id: otherUserBlog.id }
       });
       expect(remainingBlog).not.toBeNull();
 
-      // Verify comments remain with original content but null userId
       const updatedComment1 = await prisma.comment.findUnique({
         where: { id: comment1.id }
       });
@@ -152,5 +173,5 @@ describe('User Routes', () => {
       expect(updatedComment1.userId).toBeNull();
       expect(updatedComment2.userId).toBeNull();
     });
-});
+  });
 });

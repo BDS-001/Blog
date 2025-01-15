@@ -2,10 +2,7 @@ const prisma = require('../prisma/prismaClient');
 const jwt = require('jsonwebtoken');
 
 async function generateTestToken(user) {
-  // Ensure we're using the same secret as Passport
   const secret = process.env.JWT_SECRET || 'test-secret';
-  
-  // Create a payload that matches what Passport expects
   return jwt.sign(
     { 
       id: user.id,
@@ -15,30 +12,30 @@ async function generateTestToken(user) {
     secret,
     { 
       expiresIn: '1h',
-      algorithm: 'HS256'  // Match the algorithm in Passport config
+      algorithm: 'HS256'
     }
   );
 }
 
-async function getTestRole() {
+async function getTestRole(rolePermissions = {}) {
   try {
-    // Try to find the test role
-    let role = await prisma.role.findUnique({
-      where: { title: 'test_role' }
-    });
+    const defaultPermissions = {
+      title: 'test_role',
+      canComment: true,
+      canCreateBlog: true,
+      canModerate: false,
+      isAdmin: false,
+      ...rolePermissions
+    };
 
-    // If role doesn't exist, create it
-    if (!role) {
-      role = await prisma.role.create({
-        data: {
-          title: 'test_role',
-          canComment: true,
-          canCreateBlog: true,
-          canModerate: false,
-          isAdmin: false
-        }
-      });
-    }
+    // Try to find or create the role with specified permissions
+    let role = await prisma.role.upsert({
+      where: { 
+        title: defaultPermissions.title 
+      },
+      update: defaultPermissions,
+      create: defaultPermissions
+    });
 
     return role;
   } catch (error) {
@@ -49,7 +46,10 @@ async function getTestRole() {
 
 async function createTestUser(overrides = {}) {
   try {
-    const role = await getTestRole();
+    // Extract role permissions if provided
+    const { role: rolePermissions, ...userOverrides } = overrides;
+    
+    const role = await getTestRole(rolePermissions);
     if (!role) {
       throw new Error('Failed to get or create test role');
     }
@@ -61,10 +61,10 @@ async function createTestUser(overrides = {}) {
         username: `testuser${Date.now()}_${Math.random().toString(36).substring(2)}`,
         password: 'TestPass123!',
         roleId: role.id,
-        ...overrides
+        ...userOverrides
       },
       include: {
-        role: true // Include the role in the response
+        role: true
       }
     });
   } catch (error) {
@@ -74,26 +74,26 @@ async function createTestUser(overrides = {}) {
 }
 
 async function createTestBlog(userId, overrides = {}) {
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(7);
-    const title = `Test Blog ${timestamp}_${randomString}`;
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    
-    try {
-      return await prisma.blog.create({
-        data: {
-          title,
-          slug,
-          content: '...content...',
-          userId,
-          isPublic: true,
-          ...overrides
-        }
-      });
-    } catch (error) {
-      console.error('Error creating test blog:', error);
-      throw error;
-    }
+  const timestamp = Date.now();
+  const randomString = Math.random().toString(36).substring(7);
+  const title = overrides.title || `Test Blog ${timestamp}_${randomString}`;
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  
+  try {
+    return await prisma.blog.create({
+      data: {
+        title,
+        slug,
+        content: 'This is test content that needs to be at least 100 characters long. Adding more content to ensure we meet the minimum length requirement for validation.',
+        userId,
+        isPublic: true,
+        ...overrides
+      }
+    });
+  } catch (error) {
+    console.error('Error creating test blog:', error);
+    throw error;
+  }
 }
 
 async function createTestComment(userId, blogId, overrides = {}) {

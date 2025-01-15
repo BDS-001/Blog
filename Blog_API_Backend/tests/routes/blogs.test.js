@@ -1,18 +1,27 @@
 const request = require('supertest');
 const app = require('../../app');
-const { createTestUser, createTestBlog } = require('../helpers');
+const { createTestUser, createTestBlog, generateTestToken } = require('../helpers');
 const prisma = require('../../prisma/prismaClient');
 
 describe('Blog Routes', () => {
   let testUser;
+  let authToken;
 
   beforeEach(async () => {
-    testUser = await createTestUser();
+    // Create a user with both blog creation and admin permissions
+    testUser = await createTestUser({
+      role: {
+        title: `blogger_admin_${Date.now()}`, // Ensure unique role
+        canCreateBlog: true,
+        isAdmin: true,      
+        canModerate: true 
+      }
+    });
+    authToken = await generateTestToken(testUser);
   });
 
   describe('GET /api/v1/blogs', () => {
     it('should return all blogs', async () => {
-      // Create test blogs
       await Promise.all([
         createTestBlog(testUser.id),
         createTestBlog(testUser.id),
@@ -65,15 +74,37 @@ describe('Blog Routes', () => {
   });
 
   describe('POST /api/v1/blogs', () => {
-    it('should create a new blog', async () => {
-      const testBlog = await createTestBlog(testUser.id);
+    it('should create a new blog when authenticated', async () => {
+      const timestamp = Date.now();
+      const title = `Test Blog ${timestamp}`;
+      const newBlog = {
+        title,
+        content: 'This is test content that needs to be at least 100 characters long. Adding more content to ensure we meet the minimum length requirement for validation.',
+        userId: testUser.id,
+        isPublic: true
+      };
 
       const response = await request(app)
-        .get(`/api/v1/blogs/${testBlog.id}`)
-        .expect(200);
+        .post('/api/v1/blogs')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(newBlog)
+        .expect(201);
 
-      expect(response.body.data.title).toBe(testBlog.title);
+      expect(response.body.data.title).toBe(title);
       expect(response.body.data.userId).toBe(testUser.id);
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const newBlog = {
+        title: 'Test Blog',
+        content: 'This is test content that needs to be at least 100 characters long.',
+        userId: testUser.id
+      };
+
+      await request(app)
+        .post('/api/v1/blogs')
+        .send(newBlog)
+        .expect(401);
     });
 
     it('should validate required fields', async () => {
@@ -85,6 +116,7 @@ describe('Blog Routes', () => {
 
       const response = await request(app)
         .post('/api/v1/blogs')
+        .set('Authorization', `Bearer ${authToken}`)
         .send(invalidBlog)
         .expect(400);
 
@@ -94,6 +126,7 @@ describe('Blog Routes', () => {
     it('should validate content length', async () => {
       const response = await request(app)
         .post('/api/v1/blogs')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
           title: 'Test Blog',
           content: 'Too short',
@@ -112,6 +145,7 @@ describe('Blog Routes', () => {
       
       const response = await request(app)
         .put(`/api/v1/blogs/${testBlog.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
           content: updatedContent
         })
@@ -125,8 +159,9 @@ describe('Blog Routes', () => {
       
       const response = await request(app)
         .put(`/api/v1/blogs/${testBlog.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
-          content: 'Too short' // Too short content should fail validation
+          content: 'Too short'
         })
         .expect(400);
 
@@ -140,6 +175,7 @@ describe('Blog Routes', () => {
 
       await request(app)
         .delete(`/api/v1/blogs/${testBlog.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       // Verify blog is deleted
@@ -152,6 +188,7 @@ describe('Blog Routes', () => {
     it('should return 404 for non-existent blog', async () => {
       await request(app)
         .delete('/api/v1/blogs/999999')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
     });
   });

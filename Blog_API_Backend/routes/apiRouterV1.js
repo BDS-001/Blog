@@ -6,70 +6,81 @@ const validateRequest = require('../middleware/validation/validateRequest')
 const { isAuthenticated } = require('../middleware/authentication/authMiddleware')
 
 // User Routes
-router.get("/users", userController.getUsers);
+router.get("/users", isAuthenticated(['isAdmin']), userController.getUsers);
 router.get("/users/:userId", 
+    isAuthenticated(['isAdmin']),
     validateRequest('param', 'getUserById'),
     userController.getUserById
 );
 router.post("/users", 
     validateRequest('user', 'create'),
-    userController.createUser
+    userController.createUser  // No auth for registration
 );
-router.put("/users/:userId", 
+router.put("/users/:userId",
+    isAuthenticated(['isAdmin']),
     validateRequest('param', 'getUserById'),
     validateRequest('user', 'update'),
     userController.updateUser
 );
-router.delete("/users/:userId", 
+router.delete("/users/:userId",
+    isAuthenticated(['isAdmin']),
     validateRequest('param', 'getUserById'),
     userController.deleteUser
 );
 
 // Comment Routes
-router.get("/comments", commentsController.getAllComments);
-router.get("/blogs/:blogId/comments", 
+router.get("/comments", 
+    isAuthenticated(['isAdmin', 'canModerate']),
+    commentsController.getAllComments
+);
+router.get("/blogs/:blogId/comments",
     validateRequest('param', 'getBlogComments'),
-    commentsController.getBlogComments
+    commentsController.getBlogComments  // Public access for blog comments
 );
-router.get("/comments/:commentId", 
+router.get("/comments/:commentId",
     validateRequest('param', 'getCommentById'),
-    commentsController.getCommentById
+    commentsController.getCommentById  // Public access for individual comments
 );
-router.post("/comments", 
+router.post("/comments",
     isAuthenticated(['canComment']),
     validateRequest('comment', 'create'),
     commentsController.createComment
 );
-router.put("/comments/:commentId", 
+router.put("/comments/:commentId",
+    isAuthenticated(['canComment']),
     validateRequest('param', 'getCommentById'),
     validateRequest('comment', 'update'),
     commentsController.updateComment
 );
-router.delete("/comments/:commentId", 
+router.delete("/comments/:commentId",
+    isAuthenticated(['canModerate']),
     validateRequest('param', 'getCommentById'),
     commentsController.deleteComment
 );
 
 // Blog Routes
-router.get("/blogs", blogController.getBlogs);
-router.get("/blogs/:blogId", 
+router.get("/blogs", blogController.getBlogs);  // Public access
+router.get("/blogs/:blogId",
     validateRequest('param', 'getBlogById'),
-    blogController.getBlogById
+    blogController.getBlogById  // Public access
 );
-router.get("/users/:userId/blogs", 
+router.get("/users/:userId/blogs",
     validateRequest('param', 'getUserBlogs'),
-    blogController.getUserBlogs
+    blogController.getUserBlogs  // Public access
 );
-router.post("/blogs", 
+router.post("/blogs",
+    isAuthenticated(['canCreateBlog']),
     validateRequest('blog', 'create'),
     blogController.createBlog
 );
-router.put("/blogs/:blogId", 
+router.put("/blogs/:blogId",
+    isAuthenticated(['canCreateBlog']),
     validateRequest('param', 'getBlogById'),
     validateRequest('blog', 'update'),
     blogController.updateBlog
 );
-router.delete("/blogs/:blogId", 
+router.delete("/blogs/:blogId",
+    isAuthenticated(['canCreateBlog', 'isAdmin']),
     validateRequest('param', 'getBlogById'),
     blogController.deleteBlog
 );

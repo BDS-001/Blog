@@ -11,6 +11,11 @@ function isAuthenticated(requiredPermissions = []) {
         if (!user) {
             return res.status(401).json({ error: 'Unauthorized - Invalid or missing token' });
         }
+
+        if (user.role.isAdmin) {
+          req.user = user;
+          return next();
+        }
   
         const hasPermissions = requiredPermissions.every(permission => {
             return user.role[permission] === true;

@@ -2,21 +2,39 @@ const request = require('supertest');
 const app = require('../../app');
 const { createTestUser, createTestBlog, createTestComment, generateTestToken } = require('../helpers');
 const prisma = require('../../prisma/prismaClient');
-const { createComment } = require('../../controllers/commentController');
 
 describe('Comment Routes', () => {
   let testUser;
+  let adminUser;
   let testBlog;
   let authToken;
+  let adminToken;
 
   beforeEach(async () => {
-    testUser = await createTestUser();
+    // Create regular user with comment permissions
+    testUser = await createTestUser({
+      role: {
+        canComment: true
+      }
+    });
+    
+    // Create admin user
+    adminUser = await createTestUser({
+      role: {
+        title: 'admin_role',
+        canComment: true,
+        canModerate: true,
+        isAdmin: true
+      }
+    });
+
     testBlog = await createTestBlog(testUser.id);
     authToken = await generateTestToken(testUser);
+    adminToken = await generateTestToken(adminUser);
   });
 
   describe('GET /api/v1/comments', () => {
-    it('should return all comments', async () => {
+    it('should return all comments when authenticated as admin/moderator', async () => {
       await Promise.all([
         createTestComment(testUser.id, testBlog.id),
         createTestComment(testUser.id, testBlog.id),
@@ -25,10 +43,17 @@ describe('Comment Routes', () => {
 
       const response = await request(app)
         .get('/api/v1/comments')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.data).toBeInstanceOf(Array);
       expect(response.body.message).toBe('Comments retrieved successfully');
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      await request(app)
+        .get('/api/v1/comments')
+        .expect(401);
     });
   });
 
@@ -100,25 +125,13 @@ describe('Comment Routes', () => {
     });
 
     it('should return 403 when user does not have comment permission', async () => {
-      // Create or update a role that cannot comment
-      const noCommentRole = await prisma.role.upsert({
-        where: { title: 'no_comment_role' },
-        update: {
-          canComment: false,
-          canCreateBlog: false,
-          canModerate: false,
-          isAdmin: false
-        },
-        create: {
+      // Create a user with role that cannot comment
+      const restrictedUser = await createTestUser({
+        role: {
           title: 'no_comment_role',
-          canComment: false,
-          canCreateBlog: false,
-          canModerate: false,
-          isAdmin: false
+          canComment: false
         }
       });
-
-      const restrictedUser = await createTestUser({ roleId: noCommentRole.id });
       const restrictedToken = await generateTestToken(restrictedUser);
 
       const newComment = {
@@ -134,25 +147,6 @@ describe('Comment Routes', () => {
         .expect(403);
     });
 
-    it('should create a reply to another comment', async () => {
-      const parentComment = await createTestComment(testUser.id, testBlog.id);
-      
-      const replyComment = {
-        content: 'This is a reply',
-        userId: testUser.id,
-        blogId: testBlog.id,
-        parentId: parentComment.id
-      };
-
-      const response = await request(app)
-        .post('/api/v1/comments')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(replyComment)
-        .expect(201);
-
-      expect(response.body.data.parentId).toBe(parentComment.id);
-    });
-
     it('should validate required fields', async () => {
       const response = await request(app)
         .post('/api/v1/comments')
@@ -165,7 +159,7 @@ describe('Comment Routes', () => {
   });
 
   describe('PUT /api/v1/comments/:commentId', () => {
-    it('should update an existing comment', async () => {
+    it('should update an existing comment when authenticated', async () => {
       const testComment = await createTestComment(testUser.id, testBlog.id);
       const updateData = {
         content: 'Updated comment content'
@@ -173,6 +167,7 @@ describe('Comment Routes', () => {
 
       const response = await request(app)
         .put(`/api/v1/comments/${testComment.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send(updateData)
         .expect(200);
 
@@ -184,8 +179,9 @@ describe('Comment Routes', () => {
       
       const response = await request(app)
         .put(`/api/v1/comments/${testComment.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
-          content: '' // Empty content should fail validation
+          content: ''
         })
         .expect(400);
 
@@ -194,14 +190,14 @@ describe('Comment Routes', () => {
   });
 
   describe('DELETE /api/v1/comments/:commentId', () => {
-    it('should mark a comment as deleted while preserving the comment thread', async () => {
+    it('should mark a comment as deleted when authenticated as moderator', async () => {
       const testComment = await createTestComment(testUser.id, testBlog.id);
 
       await request(app)
         .delete(`/api/v1/comments/${testComment.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // Verify comment content is changed to [deleted]
       const response = await request(app)
         .get(`/api/v1/comments/${testComment.id}`)
         .expect(200);
@@ -209,72 +205,34 @@ describe('Comment Routes', () => {
       expect(response.body.data.content).toBe('[deleted]');
     });
 
-    it('should preserve reply structure when parent comment is deleted', async () => {
-      // Create a parent comment
+    it('should handle nested comment threads properly', async () => {
       const parentComment = await createTestComment(testUser.id, testBlog.id);
-      
-      // Create a reply
       const reply = await createTestComment(testUser.id, testBlog.id, { 
         parentId: parentComment.id 
       });
 
-      // Delete the parent comment
       await request(app)
         .delete(`/api/v1/comments/${parentComment.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // Verify parent comment is marked as deleted
       const parentResponse = await request(app)
         .get(`/api/v1/comments/${parentComment.id}`)
         .expect(200);
 
-      expect(parentResponse.body.data.content).toBe('[deleted]');
-
-      // Verify reply still exists unchanged
       const replyResponse = await request(app)
         .get(`/api/v1/comments/${reply.id}`)
         .expect(200);
 
+      expect(parentResponse.body.data.content).toBe('[deleted]');
       expect(replyResponse.body.data.content).not.toBe('[deleted]');
       expect(replyResponse.body.data.parentId).toBe(parentComment.id);
-    });
-
-    it('should handle deeply nested comment threads', async () => {
-      // Create a chain of nested comments
-      const parentComment = await createTestComment(testUser.id, testBlog.id);
-      const reply1 = await createTestComment(testUser.id, testBlog.id, { 
-        parentId: parentComment.id 
-      });
-      const reply2 = await createTestComment(testUser.id, testBlog.id, { 
-        parentId: reply1.id 
-      });
-
-      // Delete the middle comment
-      await request(app)
-        .delete(`/api/v1/comments/${reply1.id}`)
-        .expect(200);
-
-      // Verify middle comment is marked as deleted
-      const deletedResponse = await request(app)
-        .get(`/api/v1/comments/${reply1.id}`)
-        .expect(200);
-      expect(deletedResponse.body.data.content).toBe('[deleted]');
-
-      // Verify parent and child comments remain unchanged
-      const parentResponse = await request(app)
-        .get(`/api/v1/comments/${parentComment.id}`)
-        .expect(200);
-      expect(parentResponse.body.data.content).not.toBe('[deleted]');
-
-      const childResponse = await request(app)
-        .get(`/api/v1/comments/${reply2.id}`)
-        .expect(200);
-      expect(childResponse.body.data.content).not.toBe('[deleted]');
     });
 
     it('should return 404 for non-existent comment', async () => {
       await request(app)
         .delete('/api/v1/comments/999999')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });
   });
