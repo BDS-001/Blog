@@ -114,10 +114,25 @@ async function deleteUser(userId) {
     }
 }
 
+async function getUserForAuth(email) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+                role: true
+            }
+        });
+        return user;
+    } catch(error) {
+        throw new Error(`Failed to fetch user for auth: ${error.message}`);
+    }
+}
+
 module.exports = {
     getUsers,
     postUsers,
     putUser,
     deleteUser,
-    getUserById
+    getUserById,
+    getUserForAuth
 }

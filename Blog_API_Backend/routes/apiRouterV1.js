@@ -2,8 +2,15 @@ const router = require("express").Router();
 const userController = require('../controllers/userController')
 const commentsController = require('../controllers/commentController')
 const blogController = require('../controllers/blogController')
+const authController = require('../controllers/authController')
 const validateRequest = require('../middleware/validation/validateRequest')
 const { isAuthenticated } = require('../middleware/authentication/authMiddleware')
+
+//login
+router.post("/auth/login", 
+    validateRequest('auth', 'login'),
+    authController.login
+);
 
 // User Routes
 router.get("/users/me", isAuthenticated([]), userController.getCurrentUser);
