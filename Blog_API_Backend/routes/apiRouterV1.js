@@ -6,6 +6,7 @@ const validateRequest = require('../middleware/validation/validateRequest')
 const { isAuthenticated } = require('../middleware/authentication/authMiddleware')
 
 // User Routes
+router.get("/users/me", isAuthenticated([]), userController.getCurrentUser);
 router.get("/users", isAuthenticated(['isAdmin']), userController.getUsers);
 router.get("/users/:userId", 
     isAuthenticated(['isAdmin']),

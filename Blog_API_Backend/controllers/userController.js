@@ -56,7 +56,7 @@ async function createUser(req, res) {
     try {
         const createData = matchedData(req, { locations: ['body'] })
         createData.password = await bcrypt.hash(createData.password, 10);
-        
+
         const user = await userQueries.postUsers(createData);
         
         return res.status(HTTP_STATUS.CREATED).json({
@@ -114,10 +114,18 @@ async function deleteUser(req, res) {
     }
 }
 
+function getCurrentUser(req, res) {
+    return res.status(200).json({
+        message: 'Current user retrieved successfully',
+        data: req.user
+    });
+}
+
 module.exports = {
     getUsers,
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    getCurrentUser
 };
