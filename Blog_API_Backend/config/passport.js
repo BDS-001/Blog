@@ -1,5 +1,4 @@
 const passport = require("passport");
-const bcrypt = require('bcryptjs');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const userQueries = require('../prisma/queries/userQueries')
