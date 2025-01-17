@@ -1,31 +1,54 @@
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const SignUpForm = () => {
-    const ROLE_TITLE = 1197
-    console.log(ROLE_TITLE)
+    const ROLE_ID = 1197;
+    const { signup } = useAuth();
+    const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         email: '',
         name: '',
         username: '',
-        password: ''
+        password: '',
+        roleId: ROLE_ID
     });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
-        ...prev,
-        [name]: value
+            ...prev,
+            [name]: value
         }));
+        // Clear error when user starts typing
+        if (error) setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Form submitted:', formData);
+        setIsLoading(true);
+        setError('');
+        
+        try {
+            const valid = await signup(formData);
+            if (valid) {
+                navigate('/login');
+            } else {
+                setError('Signup failed. Please try again.');
+            }
+        } catch (err) {
+            setError(err.message || 'An error occurred during signup');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
         <div>
         <h2>Sign Up</h2>
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
             <div>
             <input
@@ -67,7 +90,9 @@ const SignUpForm = () => {
             />
             </div>
 
-            <button type="submit">Sign Up</button>
+            <button type="submit" disabled={isLoading}>
+                    {isLoading ? 'Signing up...' : 'Sign Up'}
+            </button>
         </form>
         </div>
     );

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
+
 export const AuthProvider = ({children}) => {
     const [isAuth, setIsAuth] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
@@ -74,8 +75,35 @@ export const AuthProvider = ({children}) => {
         }
     }
 
+    const signup = async (userData) => {
+        try {
+            if (!userData.email || !userData.password || !userData.username || !userData.roleId) {
+                throw new Error('Missing required fields');
+            }
+
+            const response = await fetch('http://localhost:3000/api/v1/users', {
+                method: 'POST',
+                body: JSON.stringify(userData),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.log(errorData)
+                return false
+            }
+    
+            return true;
+        } catch (error) {
+            console.log(`Login failed: ${error}`)
+            return false
+        }
+    }
+
     return (
-        <AuthContext.Provider value={{ isAuth, isLoading, login, logout, user }}>
+        <AuthContext.Provider value={{ isAuth, isLoading, login, logout, signup, user }}>
           {children}
         </AuthContext.Provider>
     );

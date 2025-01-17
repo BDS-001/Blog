@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import styles from './LoginPage.module.css'
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const LoginPage = () => {
-
+    const { login } = useAuth();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -18,6 +19,8 @@ const LoginPage = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault()
+        const formData = new FormData(event.target);
+        login(formData)
         return
     }
 
