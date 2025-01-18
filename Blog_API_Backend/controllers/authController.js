@@ -3,7 +3,6 @@ const { matchedData } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 
-
 const HTTP_STATUS = {
     OK: 200,
     CREATED: 201,
@@ -24,17 +23,19 @@ function handleError(res, operation, error) {
 async function login(req, res) {
     try {
         const {email, password} = matchedData(req, { locations: ['body'] });
+        console.log(`matched data: ${email} ${password} and body data ${JSON.stringify(req.body)}`)
         const user = await getUserForAuth(email)
+
         if (!user) {
-            return res.status(HTTP_STATUS.NOT_FOUND).json({
-                message: `Invalid credentials`
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                message: 'Invalid credentials'
             });
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
 
         if (!isValidPassword) {
-            return res.status(401).json({
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
                 message: 'Invalid credentials'
             });
         }
@@ -51,8 +52,9 @@ async function login(req, res) {
                 algorithm: 'HS256'
             }
         );
+
         const { password: _, ...userWithoutPassword } = user;
-        return res.status(200).json({
+        return res.status(HTTP_STATUS.OK).json({
             message: 'Login successful',
             data: {
                 user: userWithoutPassword,
@@ -60,9 +62,8 @@ async function login(req, res) {
             }
         });
     } catch (error) {
-        return handleError(res, 'fetching users', error);
+        return handleError(res, 'authenticating user', error);
     }
-
 }
 
 module.exports = {login}

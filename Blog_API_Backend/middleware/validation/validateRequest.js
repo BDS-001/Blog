@@ -3,12 +3,14 @@ const blogValidators = require('./blogValidators');
 const userValidators = require('./userValidators');
 const commentValidators = require('./commentValidators');
 const paramValidators = require('./paramValidators');
+const authValidators = require('./authValidators')
 
 const validators = {
   blog: blogValidators,
   user: userValidators,
   comment: commentValidators,
   param: paramValidators,
+  auth: authValidators
 };
 
 function validateRequest(resource, operation) {

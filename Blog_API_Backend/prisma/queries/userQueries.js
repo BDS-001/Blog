@@ -116,14 +116,23 @@ async function deleteUser(userId) {
 
 async function getUserForAuth(email) {
     try {
+        if (!email) {
+            throw new Error('Email is required for authentication');
+        }
+
         const user = await prisma.user.findUnique({
-            where: { email },
+            where: {
+                email: email
+            },
             include: {
                 role: true
             }
         });
+        
+        console.log('User found:', user ? 'Yes' : 'No');
         return user;
     } catch(error) {
+        console.error('Error in getUserForAuth:', error);
         throw new Error(`Failed to fetch user for auth: ${error.message}`);
     }
 }

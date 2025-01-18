@@ -6,6 +6,12 @@ const authController = require('../controllers/authController')
 const validateRequest = require('../middleware/validation/validateRequest')
 const { isAuthenticated } = require('../middleware/authentication/authMiddleware')
 
+const logRequest = (req, res, next) => {
+    console.log('Request body in route:', req.body);
+    console.log('Content-Type:', req.headers['content-type']);
+    next();
+};
+
 //login
 router.post("/auth/login", 
     validateRequest('auth', 'login'),
