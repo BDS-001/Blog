@@ -3,7 +3,7 @@ import { ProtectedRoute } from '../components/ProtectedRoute/ProtectedRoute.jsx'
 import ErrorPage from "../pages/ErrorPage/ErrorPage.jsx";
 import LoginPage from '../pages/LoginPage/LoginPage.jsx';
 import SignUpPage from '../pages/SignUpPage/SignUpPage.jsx'
-import HomePage from '../pages/HomePage/HomePage.jsx'
+import AuthorHome from '../pages/HomePage/AuthorHome.jsx'
 
 const routes = [
   {
@@ -11,7 +11,7 @@ const routes = [
     element: <App />,
     errorElement: <ErrorPage />,
     children: [
-      { index: true, element: <ProtectedRoute> <HomePage/> </ProtectedRoute> },
+      { index: true, element: <ProtectedRoute> <AuthorHome/> </ProtectedRoute> },
       { path: "login", element: <LoginPage /> },
       { path: "signup", element: <SignUpPage /> },
     ],
