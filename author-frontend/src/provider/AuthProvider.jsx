@@ -29,7 +29,9 @@ export const AuthProvider = ({children}) => {
             })
 
             if (response.ok) {
-                const {user} = await response.json()
+                const result = await response.json()
+                console.log(`authentication result ${JSON.stringify(result)}`)
+                const user = result.data
                 setIsAuth(true);
                 setUser(user)
             } else {
