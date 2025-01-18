@@ -30,6 +30,30 @@ const SignUpForm = () => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
+
+        if (formData.password.length < 8) {
+            setError('Password must be at least 8 characters long');
+            setIsLoading(false);
+            return;
+        }
+        
+        if (!formData.password.match(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]/)) {
+            setError('Password must contain at least one letter and one number');
+            setIsLoading(false);
+            return;
+        }
+        
+        if (formData.username.length < 3 || formData.username.length > 30) {
+            setError('Username must be between 3 and 30 characters');
+            setIsLoading(false);
+            return;
+        }
+        
+        if (!formData.username.match(/^[a-zA-Z0-9_-]+$/)) {
+            setError('Username can only contain letters, numbers, underscores, and dashes');
+            setIsLoading(false);
+            return;
+        }
         
         try {
             const valid = await signup(formData);

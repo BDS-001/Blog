@@ -53,54 +53,67 @@ export const AuthProvider = ({children}) => {
 
     const login = async (credentials) => {
         try {
+            console.log('Sending login request with email:', credentials.email);
             const response = await fetch('http://localhost:3000/api/v1/auth/login', {
                 method: 'POST',
-                body: JSON.stringify(credentials),
                 headers: {
                     'Content-Type': 'application/json',
                 },
-            })
-
-            if (response.ok) {
-                const {token, user} = await response.json()
-                localStorage.setItem('token', token)
-                setIsAuth(true)
-                setUser(user)
-                return true
-            }
-            return false
+                body: JSON.stringify(credentials)
+            });
+      
+          const result = await response.json();
+          
+          if (response.ok) {
+            const { token, user } = result.data;
+            localStorage.setItem('token', token);
+            setIsAuth(true);
+            setUser(user);
+            return true;
+          } else {
+            console.error('Login failed:', result.message);
+            return false;
+          }
         } catch (error) {
-            console.log(`Login failed: ${error}`)
-            return false
+          console.error('Login error:', error);
+          return false;
         }
-    }
+      }
 
     const signup = async (userData) => {
         try {
-            if (!userData.email || !userData.password || !userData.username || !userData.roleId) {
-                throw new Error('Missing required fields');
+          console.log('Sending user data:', userData);
+      
+          if (!userData.email || !userData.password || !userData.username || !userData.name || !userData.roleId) {
+            throw new Error('Missing required fields');
+          }
+      
+          const response = await fetch('http://localhost:3000/api/v1/users', {
+            method: 'POST',
+            body: JSON.stringify(userData),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+      
+          const responseData = await response.json();
+          console.log('Server response:', responseData);
+      
+          if (!response.ok) {
+            // Log the specific validation errors
+            if (responseData.errors) {
+              console.log('Validation errors:', responseData.errors);
+              throw new Error(responseData.errors.map(err => err.msg).join(', '));
             }
-
-            const response = await fetch('http://localhost:3000/api/v1/users', {
-                method: 'POST',
-                body: JSON.stringify(userData),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.log(errorData)
-                return false
-            }
-    
-            return true;
+            throw new Error('Signup failed');
+          }
+      
+          return true;
         } catch (error) {
-            console.log(`Login failed: ${error}`)
-            return false
+          console.log(`Signup failed: ${error}`);
+          throw error;
         }
-    }
+      };
 
     return (
         <AuthContext.Provider value={{ isAuth, isLoading, login, logout, signup, user }}>
