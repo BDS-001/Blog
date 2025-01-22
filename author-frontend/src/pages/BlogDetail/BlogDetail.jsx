@@ -1,7 +1,7 @@
-// pages/BlogDetail/BlogDetail.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './BlogDetail.module.css';
+import parseMarkup from '../../utils/markupFormatter'
 
 const BlogDetail = () => {
   const { blogId } = useParams();
@@ -145,9 +145,12 @@ const BlogDetail = () => {
               {blog.isPublic ? 'Public' : 'Private'}
             </span>
           </div>
-          <div className={styles.content}>
-            {blog.content}
-          </div>
+          <div 
+            className={styles.content} 
+            dangerouslySetInnerHTML={{
+                __html: parseMarkup(blog.content)
+            }}
+            />
         </div>
       )}
     </div>
