@@ -1,0 +1,45 @@
+.blogCard {
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .blogCard h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.5em;
+  }
+  
+  .blogControls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+  }
+  
+  .deleteButton {
+    background-color: #dc2626;
+    color: white;
+  }
+  
+  .deleteButton:hover {
+    background-color: #b91c1c;
+  }
+
+  .viewButton {
+    display: inline-block;
+    padding: 0.6em 1.2em;
+    border-radius: 8px;
+    background-color: #4f46e5;
+    color: white;
+    text-decoration: none;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  
+  .viewButton:hover {
+    background-color: #4338ca;
+  }

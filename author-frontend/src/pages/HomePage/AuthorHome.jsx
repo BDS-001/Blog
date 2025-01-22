@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import styles from './AuthorHome.module.css';
+import WelcomeHeader from '../../components/WelcomeHeader/WelcomeHeader';
+import CreateBlogForm from '../../components/CreateBlogForm/CreateBlogForm';
+import BlogList from '../../components/BlogList/BlogList';
+
 
 const AuthorHome = () => {
   const { user } = useAuth();
@@ -103,91 +107,23 @@ const AuthorHome = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.welcomeSection}>
-        <h1>Welcome, {user.username}</h1>
-        <button 
-          className={styles.createButton}
-          onClick={() => setIsCreating(true)}
-        >
-          Create New Blog
-        </button>
-      </div>
+      <WelcomeHeader 
+        username={user.username} 
+        onCreateClick={() => setIsCreating(true)}
+      />
 
       {isCreating && (
-        <form onSubmit={handleCreateBlog} className={styles.createForm}>
-          <input
-            type="text"
-            placeholder="Blog Title (3-100 characters)"
-            value={newBlog.title}
-            onChange={(e) => setNewBlog({ ...newBlog, title: e.target.value })}
-            className={styles.input}
-            minLength={3}
-            maxLength={100}
-            required
-          />
-          <textarea
-            placeholder="Blog Content (minimum 100 characters)"
-            value={newBlog.content}
-            onChange={(e) => setNewBlog({ ...newBlog, content: e.target.value })}
-            className={styles.textarea}
-            minLength={100}
-            required
-          />
-          <div className={styles.formControls}>
-            <label>
-              <input
-                type="checkbox"
-                checked={newBlog.isPublic}
-                onChange={(e) => setNewBlog({ ...newBlog, isPublic: e.target.checked })}
-              />
-              Make Public
-            </label>
-            <div>
-              <button type="submit" className={styles.submitButton}>Create</button>
-              <button 
-                type="button" 
-                onClick={() => {
-                  setIsCreating(false);
-                  setNewBlog({
-                    title: '',
-                    content: '',
-                    isPublic: false,
-                    userId: user.id
-                  });
-                }}
-                className={styles.cancelButton}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-          <div className={styles.formHints}>
-            <small>{newBlog.title.length}/100 characters (title)</small>
-            <small>{newBlog.content.length}/100 characters minimum (content)</small>
-          </div>
-        </form>
+        <CreateBlogForm
+          userId={user.id}
+          onSubmit={handleCreateBlog}
+          onCancel={() => setIsCreating(false)}
+        />
       )}
 
-      <div className={styles.blogList}>
-        {blogs.length === 0 ? (
-          <p>No blogs yet. Create your first blog post!</p>
-        ) : (
-          blogs.map(blog => (
-          <div key={blog.id} className={styles.blogCard}>
-            <h2>{blog.title}</h2>
-            <p>{blog.content.substring(0, 150)}...</p>
-            <div className={styles.blogControls}>
-              <span>{blog.isPublic ? 'Public' : 'Private'}</span>
-              <button 
-                onClick={() => handleDeleteBlog(blog.id)}
-                className={styles.deleteButton}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        )))}
-      </div>
+      <BlogList 
+        blogs={blogs}
+        onDeleteBlog={handleDeleteBlog}
+      />
     </div>
   );
 };

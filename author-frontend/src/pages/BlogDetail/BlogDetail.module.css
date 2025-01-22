@@ -1,0 +1,133 @@
+.container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  
+  .backButton {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .editButton {
+    background-color: #4f46e5;
+    color: white;
+  }
+  
+  .editButton:hover {
+    background-color: #4338ca;
+  }
+  
+  .blogContent {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 2rem;
+  }
+  
+  .blogContent h1 {
+    margin: 0 0 1rem 0;
+    font-size: 2em;
+  }
+  
+  .metadata {
+    margin-bottom: 2rem;
+  }
+  
+  .visibility {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    font-size: 0.875rem;
+  }
+  
+  .content {
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  
+  .editForm {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .titleInput,
+  .contentInput {
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.6em;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: #1a1a1a;
+    color: rgba(255, 255, 255, 0.87);
+    font-family: inherit;
+  }
+  
+  .titleInput {
+    font-size: 1.5em;
+  }
+  
+  .contentInput {
+    min-height: 300px;
+    resize: vertical;
+  }
+  
+  .formControls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .visibilityToggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .buttonGroup {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .saveButton {
+    background-color: #4f46e5;
+    color: white;
+  }
+  
+  .saveButton:hover {
+    background-color: #4338ca;
+  }
+  
+  .cancelButton {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  @media (prefers-color-scheme: light) {
+    .blogContent,
+    .editForm {
+      background-color: #ffffff;
+      border-color: #e5e7eb;
+    }
+  
+    .titleInput,
+    .contentInput {
+      background-color: #f9f9f9;
+      border-color: #e5e7eb;
+      color: #213547;
+    }
+  }

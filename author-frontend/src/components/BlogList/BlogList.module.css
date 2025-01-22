@@ -1,0 +1,7 @@
+.blogList {
+    display: grid;
+    gap: 1.5rem;
+    justify-content: start;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 400px));
+    width: 100%;
+  }
