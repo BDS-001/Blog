@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styles from './BlogDetails.module.css';
+import parseMarkup from '../../utils/markupFormatter'
 
 
 const BlogDetails = () => {
@@ -12,7 +13,8 @@ const BlogDetails = () => {
     useEffect(() => {
       const fetchBlog = async () => {
         try {
-          const response = await fetch(`http://localhost:3000/api/v1/blogs/${slug}`);
+          const response = await fetch(`http://localhost:3000/api/v1/blogs/view/${slug}`);
+          console.log('Response status:', response.status);
           if (!response.ok) throw new Error('Blog not found');
           const data = await response.json();
           setBlog(data.data);
@@ -42,9 +44,12 @@ const BlogDetails = () => {
           </div>
         </header>
         
-        <div className={styles.content}>
-          {blog.content}
-        </div>
+        <div 
+            className={styles.content} 
+            dangerouslySetInnerHTML={{
+                __html: parseMarkup(blog.content)
+            }}
+        />
   
         <footer className={styles.footer}>
           <button 
