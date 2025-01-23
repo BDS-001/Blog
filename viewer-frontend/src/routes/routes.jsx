@@ -9,7 +9,6 @@ const routes = [
     errorElement: <ErrorPage />,
     children: [
       { index: true, element: <HomePage /> },
-    //   { path: "contact", element: <ContactPage /> },
     ],
   },
 ];
