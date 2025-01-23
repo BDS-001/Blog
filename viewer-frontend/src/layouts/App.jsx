@@ -9,7 +9,6 @@ function App() {
     <AuthProvider>
       <Header />
       <main>
-        hi
         <Outlet/>
       </main>
     </AuthProvider>

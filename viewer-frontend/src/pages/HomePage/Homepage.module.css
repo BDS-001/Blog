@@ -1,0 +1,20 @@
+.homepage {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+  }
+  
+  .loading, .error {
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .error {
+    color: #dc2626;
+  }
