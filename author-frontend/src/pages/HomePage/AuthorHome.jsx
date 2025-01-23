@@ -5,17 +5,10 @@ import WelcomeHeader from '../../components/WelcomeHeader/WelcomeHeader';
 import CreateBlogForm from '../../components/CreateBlogForm/CreateBlogForm';
 import BlogList from '../../components/BlogList/BlogList';
 
-
 const AuthorHome = () => {
   const { user } = useAuth();
   const [blogs, setBlogs] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
-  const [newBlog, setNewBlog] = useState({
-    title: '',
-    content: '',
-    isPublic: false,
-    userId: user.id
-  });
 
   const API_BASE_URL = 'http://localhost:3000';
 
@@ -40,29 +33,24 @@ const AuthorHome = () => {
     fetchUserBlogs();
   }, [fetchUserBlogs]);
 
-
-
-  const handleCreateBlog = async (e) => {
-    e.preventDefault();
-
-    // Validate form data
-    if (newBlog.title.length < 3 || newBlog.title.length > 100) {
-      alert('Title must be between 3 and 100 characters');
-      return;
-    }
-    if (newBlog.content.length < 100) {
-      alert('Content must be at least 100 characters');
-      return;
-    }
-
+  const handleCreateBlog = async (blogData) => {
     try {
+      if (blogData.title.length < 3 || blogData.title.length > 100) {
+        alert('Title must be between 3 and 100 characters');
+        return;
+      }
+      if (blogData.content.length < 100) {
+        alert('Content must be at least 100 characters');
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/v1/blogs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(newBlog)
+        body: JSON.stringify({ ...blogData, userId: user.id })
       });
       
       if (!response.ok) {
@@ -71,12 +59,6 @@ const AuthorHome = () => {
       }
 
       setIsCreating(false);
-      setNewBlog({
-        title: '',
-        content: '',
-        isPublic: false,
-        userId: user.id
-      });
       fetchUserBlogs();
     } catch (error) {
       console.error('Error creating blog:', error);
@@ -97,9 +79,7 @@ const AuthorHome = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      if (response.ok) {
-        fetchUserBlogs();
-      }
+      fetchUserBlogs();
     } catch (error) {
       console.error('Error deleting blog:', error);
     }
