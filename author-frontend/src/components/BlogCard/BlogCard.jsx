@@ -5,12 +5,12 @@ import styles from './BlogCard.module.css';
 
 const BlogCard = ({ blog, onDelete }) => (
   <div className={styles.blogCard}>
+    <span className={styles.visibility}>
+      {blog.isPublic ? 'Public' : 'Private'}
+    </span>
     <h2>{blog.title}</h2>
-    <p>{blog.content.substring(0, 150)}...</p>
+    <p className={styles.blogContent}>{blog.content.substring(0, 150)}...</p>
     <div className={styles.blogControls}>
-      <span className={styles.visibility}>
-        {blog.isPublic ? 'Public' : 'Private'}
-      </span>
       <div className={styles.buttonGroup}>
         <Link 
           to={`/blogs/${blog.id}`}
