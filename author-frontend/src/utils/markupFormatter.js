@@ -13,7 +13,13 @@ const parseMarkup = (input) => {
   // Step 2: Convert line breaks (must do this first to handle multi-line content)
   formatted = formatted.replace(/\n/g, '<br>');
 
-  // Step 3: Convert markdown to HTML with safe class names
+  // Step 3: Handle horizontal rules (must be done before headers since both start with #)
+  formatted = formatted.replace(
+    /(^|<br>)---(?=<br>|$)/g, 
+    '$1<hr class="border-t border-gray-300 my-4">'
+  );
+
+  // Step 4: Convert markdown to HTML with safe class names
   // Headers (must be at start of line)
   formatted = formatted
     .replace(/(^|<br>)# (.*?)(?=<br>|$)/g, '$1<h1 class="text-2xl font-bold my-2">$2</h1>')
@@ -46,7 +52,7 @@ const parseMarkup = (input) => {
     '$1<li class="ml-4">$2</li>'
   );
 
-  // Step 4: Replace consecutive list items with proper ul wrapping
+  // Step 5: Replace consecutive list items with proper ul wrapping
   formatted = formatted.replace(
     /(<li.*?>.*?<\/li>)(?:\s*<li.*?>.*?<\/li>)+/g,
     '<ul class="list-disc mb-4">$&</ul>'
