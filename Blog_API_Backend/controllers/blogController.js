@@ -52,6 +52,26 @@ async function getBlogById(req, res) {
     }
 }
 
+async function getBlogBySlug(req, res) {
+    try {
+        const { slug } = matchedData(req, { locations: ['params'] });
+        const blog = await blogQueries.getBlogBySlug(slug);
+        
+        if (!blog) {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: `Blog with slug ${slug} not found`
+            });
+        }
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Blog retrieved successfully',
+            data: blog
+        });
+    } catch (error) {
+        return handleError(res, 'fetching blog', error);
+    }
+}
+
 async function getUserBlogs(req, res) {
     try {
         const { userId } = matchedData(req, {locations: ['params']})
@@ -127,5 +147,6 @@ module.exports = {
     createBlog,
     updateBlog,
     deleteBlog,
-    getUserBlogs
+    getUserBlogs,
+    getBlogBySlug
 };

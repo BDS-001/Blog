@@ -61,6 +61,37 @@ async function getBlogById(blogId) {
     }
 }
 
+async function getBlogBySlug(slug) {
+    try {
+        const blog = await prisma.blog.findUnique({
+            where: { slug },
+            include: {
+                author: {
+                    select: userSelect
+                },
+                comments: {
+                    where: {parentId: null},
+                    include: {
+                        user: {
+                            select: userSelect
+                        },
+                        replies: {
+                            include: {
+                                user: {
+                                    select: userSelect
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        return blog
+    } catch(error) {
+        throw new Error(`Failed to fetch blog: ${error.message}`);
+    }
+}
+
 async function deleteBlog(blogId) {
     try {
         const existingBlog = await prisma.blog.findUnique({
@@ -126,5 +157,6 @@ module.exports = {
     getBlogById,
     deleteBlog,
     postBlog,
-    putBlog
+    putBlog,
+    getBlogBySlug
 }

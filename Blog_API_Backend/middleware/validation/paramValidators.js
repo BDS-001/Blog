@@ -31,7 +31,15 @@ const paramValidators = {
   
   getBlogComments: [
     createIdValidator('blogId')
-  ]
+  ],
+  getBlogBySlug: [
+    param('slug')
+      .trim()
+      .notEmpty()
+      .withMessage('Blog slug is required')
+      .matches(/^[a-z0-9-]+$/)
+      .withMessage('Invalid slug format')
+  ],
 };
 
 module.exports = paramValidators;

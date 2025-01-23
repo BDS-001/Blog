@@ -78,6 +78,10 @@ router.get("/blogs/:blogId",
     validateRequest('param', 'getBlogById'),
     blogController.getBlogById  // Public access
 );
+router.get("/blogs/view/:slug",
+    validateRequest('param', 'getBlogBySlug'),
+    blogController.getBlogBySlug  // Public access
+);
 router.get("/users/:userId/blogs",
     validateRequest('param', 'getUserBlogs'),
     blogController.getUserBlogs  // Public access
