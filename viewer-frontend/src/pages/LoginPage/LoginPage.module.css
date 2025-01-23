@@ -1,0 +1,9 @@
+.inputContainer {
+    text-align: left;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    margin: 1rem 0;
+}
