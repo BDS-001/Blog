@@ -1,0 +1,139 @@
+.comments {
+    margin-top: 3rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: rgba(255, 255, 255, 0.87);
+  }
+  
+  .commentContainer {
+    border-left: 2px solid #333;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .commentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  
+  .username {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.87);
+  }
+  
+  .date {
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .content {
+    margin-top: 0.5rem;
+    color: rgba(255, 255, 255, 0.87);
+  }
+  
+  .actions {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .actionButton {
+    font-size: 0.875rem;
+    color: #646cff;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  
+  .actionButton:hover {
+    color: #535bf2;
+  }
+  
+  .replies {
+    margin-left: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .form {
+    margin-bottom: 1.5rem;
+  }
+  
+  .textarea {
+    width: 100%;
+    padding: 0.75rem;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    resize: vertical;
+  }
+  
+  .textarea:focus {
+    outline: none;
+    border-color: #646cff;
+  }
+  
+  .submitButton {
+    background-color: #646cff;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .submitButton:hover {
+    background-color: #535bf2;
+  }
+  
+  .cancelButton {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.87);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #333;
+    cursor: pointer;
+    margin-left: 0.5rem;
+  }
+  
+  .cancelButton:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .loginPrompt {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (prefers-color-scheme: light) {
+    .title {
+      color: #213547;
+    }
+    
+    .username {
+      color: #213547;
+    }
+    
+    .content {
+      color: #213547;
+    }
+    
+    .textarea {
+      background-color: white;
+      border-color: #e2e8f0;
+      color: #213547;
+    }
+    
+    .commentContainer {
+      border-left-color: #e2e8f0;
+    }
+  }

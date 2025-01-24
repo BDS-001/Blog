@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styles from './BlogDetails.module.css';
 import parseMarkup from '../../utils/markupFormatter'
+import BlogComments from '../../components/BlogComments/BlogComments';
 
 
 const BlogDetails = () => {
@@ -59,6 +60,7 @@ const BlogDetails = () => {
             Back to Blogs
           </button>
         </footer>
+        <BlogComments blogId={blog.id} />
       </article>
     );
   };

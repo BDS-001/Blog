@@ -62,29 +62,6 @@
     background-color: #535bf2;
   }
   
-  /* Add support for light mode */
-  @media (prefers-color-scheme: light) {
-    .header {
-      background-color: rgba(255, 255, 255, 0.8);
-      border-bottom: 1px solid #e5e7eb;
-    }
-  
-    .logo {
-      color: #213547;
-    }
-  
-    .signOutButton {
-      border-color: #e5e7eb;
-      color: #213547;
-    }
-  
-    .signOutButton:hover {
-      background-color: #dc2626;
-      border-color: #dc2626;
-      color: white;
-    }
-  }
-  
   /* Responsive styles */
   @media (max-width: 640px) {
     .headerContent {
